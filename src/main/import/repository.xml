@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<content xmlns:j="http://www.jahia.org/jahia/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <modules jcr:primaryType="jnt:modules">
+        <download-helper j:dependencies="default serverSettings"
+                         j:installedModules="download-helper"
+                         j:modulePriority="0"
+                         j:moduleType="module"
+                         j:title="Download helper"
+                         jcr:primaryType="jnt:module">                
+            <portlets jcr:primaryType="jnt:portletFolder"/>
+            <files jcr:primaryType="jnt:folder"/>
+            <contents jcr:primaryType="jnt:contentFolder"/>
+            <templates j:rootTemplatePath="/" jcr:primaryType="jnt:templatesFolder">
+                <files jcr:primaryType="jnt:folder">
+                    <serveradmin jcr:primaryType="jnt:folder">
+                        <downloadHelper.png j:height="16"
+                                            j:width="16"
+                                            jcr:mixinTypes="jmix:image"
+                                            jcr:primaryType="jnt:file">
+                            <jcr:content jcr:mimeType="image/png" jcr:primaryType="jnt:resource"/>
+                        </downloadHelper.png>
+                    </serveradmin>
+                </files>
+                <contents jcr:primaryType="jnt:contentFolder"/>
+                <server-settings-base j:view="serverSettings"
+                                      jcr:mixinTypes="jmix:useUILocale"
+                                      jcr:primaryType="jnt:template">
+                    <system-components j:hiddenTemplate="false"
+                                       j:icon="/modules/serverSettings/templates/files/serveradmin/system_x0020_components/system_components.png"
+                                       j:titleKey="serverSettings.systemComponents"
+                                       jcr:mixinTypes="jmix:rbTitle"
+                                       jcr:primaryType="jnt:template">
+                        <downloadHelper j:applyOn="jnt:globalSettings"
+                                        j:defaultTemplate="false"
+                                        j:hiddenTemplate="false"
+                                        j:icon="/modules/download-helper/templates/files/serveradmin/downloadHelper.png"
+                                        j:requiredPermissionNames="administrationAccess"
+                                        j:titleKey="downloadHelper.title"
+                                        jcr:mixinTypes="jmix:rbTitle"
+                                        jcr:primaryType="jnt:contentTemplate">
+                            <pagecontent jcr:primaryType="jnt:contentList">
+                                <download-helper jcr:primaryType="jnt:serverSettingsDownloadHelper"/>
+                            </pagecontent>
+                        </downloadHelper>
+                    </system-components>
+                </server-settings-base>
+            </templates>
+        </download-helper>
+    </modules>
+</content>

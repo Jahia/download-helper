@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow xmlns="http://www.springframework.org/schema/webflow"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+		http://www.springframework.org/schema/webflow
+		http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd">
+
+    <var name="flowHandler" class="org.jahia.modules.downloadhelper.flow.DownloadHelperHandler"/>
+
+    <view-state id="downloadHelper">
+        <on-render>
+            <evaluate expression="flowHandler.getAvailableSpace()" result="requestScope.availableSpace"/>
+            <evaluate expression="flowHandler.getDownloadFolderPath()" result="requestScope.downloadFolderPath"/>
+        </on-render>
+        <transition on="submitDownloadHelperSettings" to="downloadHelper">
+            <evaluate expression="flowHandler.download(flowRequestContext)"/>
+            <set name="flowScope.downloadStarted" value="true" type="java.lang.Boolean"/>
+        </transition>
+    </view-state>    
+</flow>
