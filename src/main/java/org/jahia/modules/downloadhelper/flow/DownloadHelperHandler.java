@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileSystemUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.services.render.RenderContext;
+import org.jahia.settings.SettingsBean;
 import org.springframework.webflow.execution.RequestContext;
 
 public class DownloadHelperHandler implements Serializable {
@@ -71,5 +72,9 @@ public class DownloadHelperHandler implements Serializable {
 
     public String getDownloadFolderPath() {
         return DownloadHelperService.DOWNLOAD_FOLDER_PATH;
+    }
+
+    public boolean isProcessingServer() {
+        return SettingsBean.getInstance().isProcessingServer();
     }
 }

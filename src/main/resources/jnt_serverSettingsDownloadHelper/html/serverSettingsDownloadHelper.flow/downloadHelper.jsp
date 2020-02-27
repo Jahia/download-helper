@@ -28,63 +28,71 @@
 <h2>
     <fmt:message key="downloadHelper.settings"/>
 </h2>
-<p>
-    <c:forEach items="${flowRequestContext.messageContext.allMessages}" var="message">
-        <c:if test="${message.severity eq 'ERROR'}">
-        <div class="alert alert-error">
+<c:choose>
+    <c:when test="${processingServer}">
+        <p>
+            <c:forEach items="${flowRequestContext.messageContext.allMessages}" var="message">
+                <c:if test="${message.severity eq 'ERROR'}">
+                <div class="alert alert-error">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    ${message.text}
+                </div>
+            </c:if>
+        </c:forEach>
+    </p>
+    <c:if test="${downloadStarted}">
+        <div class="alert alert-success">
             <button type="button" class="close" data-dismiss="alert">&times;</button>
-            ${message.text}
+            <fmt:message key="label.download.started"/>
         </div>
     </c:if>
-</c:forEach>
-</p>
-<c:if test="${downloadStarted}">
-    <div class="alert alert-success">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        <fmt:message key="label.download.started"/>
-    </div>
-</c:if>
-<div class="box-1">
-    You have <b>${availableSpace}</b> available in the folder <b>${downloadFolderPath}</b>.
+    <div class="box-1">
+        You have <b>${availableSpace}</b> available in the folder <b>${downloadFolderPath}</b>.
 
-    <form class="form-horizontal" id="downloadHelperSettings" name="downloadHelperSettings" action='${flowExecutionUrl}' method="post">
-        <input type="hidden" name="_eventId" value="submitDownloadHelperSettings"/>
-        <div class="control-group" id="group-serviceActivated" data-error="<fmt:message key="downloadHelper.errors.activated"/>">
-            <label class="control-label"><fmt:message key="downloadHelper.protocol"/>:</label>
-            <div class="controls">
-                <select id="protocol" name="protocol">
-                    <option value="https">https://</option>
-                    <option value="ftp">ftp://</option>
-                </select> 
+        <form class="form-horizontal" id="downloadHelperSettings" name="downloadHelperSettings" action='${flowExecutionUrl}' method="post">
+            <input type="hidden" name="_eventId" value="submitDownloadHelperSettings"/>
+            <div class="control-group" id="group-serviceActivated" data-error="<fmt:message key="downloadHelper.errors.activated"/>">
+                <label class="control-label"><fmt:message key="downloadHelper.protocol"/>:</label>
+                <div class="controls">
+                    <select id="protocol" name="protocol">
+                        <option value="https">https://</option>
+                        <option value="ftp">ftp://</option>
+                    </select> 
+                </div>
+                <label class="control-label"><fmt:message key="downloadHelper.url"/>:</label>
+                <div class="controls">
+                    <input type="text" name="url" id="url"/>
+                </div>
+                <label class="control-label"><fmt:message key="downloadHelper.filename"/>:</label>
+                <div class="controls">
+                    <input type="text" name="filename" id="filename"/>
+                </div>
+                <label class="control-label"><fmt:message key="downloadHelper.login"/>:</label>
+                <div class="controls">
+                    <input type="text" name="login" id="login"/>
+                </div>
+                <label class="control-label"><fmt:message key="downloadHelper.password"/>:</label>
+                <div class="controls">
+                    <input type="password" name="password" id="password" value="${password}"/>
+                </div>
+                <label class="control-label"><fmt:message key="downloadHelper.email"/>:</label>
+                <div class="controls">
+                    <input type="text" name="email" id="email"/>
+                </div>
             </div>
-            <label class="control-label"><fmt:message key="downloadHelper.url"/>:</label>
-            <div class="controls">
-                <input type="text" name="url" id="url"/>
+            <div class="control-group">
+                <div class="controls">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="icon-${'share'} icon-white"></i>
+                        &nbsp;<fmt:message key="label.${'update'}"/>
+                    </button>
+                </div>
             </div>
-            <label class="control-label"><fmt:message key="downloadHelper.filename"/>:</label>
-            <div class="controls">
-                <input type="text" name="filename" id="filename"/>
-            </div>
-            <label class="control-label"><fmt:message key="downloadHelper.login"/>:</label>
-            <div class="controls">
-                <input type="text" name="login" id="login"/>
-            </div>
-            <label class="control-label"><fmt:message key="downloadHelper.password"/>:</label>
-            <div class="controls">
-                <input type="password" name="password" id="password" value="${password}"/>
-            </div>
-            <label class="control-label"><fmt:message key="downloadHelper.email"/>:</label>
-            <div class="controls">
-                <input type="text" name="email" id="email"/>
-            </div>
-        </div>
-        <div class="control-group">
-            <div class="controls">
-                <button class="btn btn-primary" type="submit">
-                    <i class="icon-${'share'} icon-white"></i>
-                    &nbsp;<fmt:message key="label.${'update'}"/>
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
+        </form>
+    </div>
+</c:when>    
+<c:otherwise>
+    This module can only be used on the processing server.
+
+</c:otherwise>
+</c:choose>

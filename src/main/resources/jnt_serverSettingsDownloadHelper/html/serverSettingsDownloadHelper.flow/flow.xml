@@ -11,6 +11,7 @@
         <on-render>
             <evaluate expression="flowHandler.getAvailableSpace()" result="requestScope.availableSpace"/>
             <evaluate expression="flowHandler.getDownloadFolderPath()" result="requestScope.downloadFolderPath"/>
+            <evaluate expression="flowHandler.isProcessingServer()" result="requestScope.processingServer"/>
         </on-render>
         <transition on="submitDownloadHelperSettings" to="downloadHelper">
             <evaluate expression="flowHandler.download(flowRequestContext)"/>
