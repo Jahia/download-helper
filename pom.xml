@@ -14,9 +14,9 @@
     <description>This is the custom module (download-helper) for running on a Digital Experience Manager server.</description>
 
     <scm>
-        <connection>scm:git:git@github.com:Jahia/brute-force-login-protection.git</connection>
-        <developerConnection>scm:git:git@github.com:Jahia/brute-force-login-protection.git</developerConnection>
-        <url>https://github.com/Jahia/brute-force-login-protection</url>
+        <connection>scm:git:git@github.com:Jahia/download-helper.git</connection>
+        <developerConnection>scm:git:git@github.com:Jahia/download-helper.git</developerConnection>
+        <url>https://github.com/Jahia/download-helper.git</url>
         <tag>1_0_0</tag>
     </scm>
     <properties>
