@@ -5,3 +5,7 @@
 *.iml
 *.ipr
 target
+/pom.xml.tag
+/pom.xml.next
+/release.properties
+/pom.xml.releaseBackup
