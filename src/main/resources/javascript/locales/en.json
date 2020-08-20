@@ -1,0 +1,11 @@
+{
+    "email": "Mail when download completed",
+    "filename": "Filename",
+    "login": "Login (optional)",
+    "password": "Password (only if login)",
+    "protocol": "https or ftp",
+    "settings": "Download helper",
+    "title": "Download helper",
+    "url": "Url of the file to download",
+    "label.download.started": "Download started"
+}

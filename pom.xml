@@ -4,12 +4,13 @@
     <parent>
         <artifactId>jahia-modules</artifactId>
         <groupId>org.jahia.modules</groupId>
-        <version>7.2.3.0</version>
+        <version>8.0.0.0</version>
+        <relativePath />
     </parent>
     <groupId>org.jahia.modules</groupId>
     <artifactId>download-helper</artifactId>
     <name>download-helper</name>
-    <version>1.0.2-SNAPSHOT</version>    
+    <version>2.0.0-SNAPSHOT</version>    
     <packaging>bundle</packaging>
     <description>This is the custom module (download-helper) for running on a Digital Experience Manager server.</description>
 
@@ -23,6 +24,7 @@
         <jahia-deploy-on-site>system</jahia-deploy-on-site>
         <jahia-module-type>system</jahia-module-type>
         <jahia-depends>default,siteSettings,tabularList,serverSettings</jahia-depends>
+        <jahia-module-signature>MCwCFBh+kXavTwVpZ37/xTlPIcXuuUfoAhQB0p11ck+U7cRt7P18516DtPR5rQ==</jahia-module-signature>
     </properties>
 
     <repositories>
@@ -55,6 +57,7 @@
                 <artifactId>maven-bundle-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
+                    <require-capability>osgi.extender;filter:="(osgi.extender=org.jahia.bundles.blueprint.extender.config)"</require-capability>
                     <instructions />
                 </configuration>
             </plugin>
