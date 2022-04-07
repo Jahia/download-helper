@@ -37,7 +37,11 @@ public class DownloadHelperHandler implements Serializable {
             @Override
             public void run() {
                 final DownloadHelperService service = DownloadHelperService.getInstance();
-                service.download(protocol, url, login, password, filename, email, ip, currentUser);
+                try {
+                    service.download(protocol, url, login, password, filename, email, ip, currentUser);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
     }

@@ -4,7 +4,7 @@
     <parent>
         <artifactId>jahia-modules</artifactId>
         <groupId>org.jahia.modules</groupId>
-        <version>8.0.0.0</version>
+        <version>8.1.0.0</version>
         <relativePath />
     </parent>
     <groupId>org.jahia.modules</groupId>
@@ -42,14 +42,6 @@
             </snapshots>
         </repository>
     </repositories>
-    
-    <dependencies>
-        <dependency>
-            <groupId>commons-net</groupId>
-            <artifactId>commons-net</artifactId>
-            <version>3.6</version>
-        </dependency>
-    </dependencies>
 
     <build>
         <plugins>
