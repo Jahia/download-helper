@@ -1,6 +1,7 @@
 package org.jahia.modules.downloadhelper.services;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
@@ -9,8 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.util.Base64;
@@ -38,7 +41,7 @@ public final class DownloadHelperService {
     }
 
     public void download(String protocol, String url, String login, String password, String filename, String ccEmail,
-            String ip, String user) {
+            String ip, String user) throws IOException {
         String completeUrl = "unknown";
         InputStream inputStream = null;
         final File targetFile = new File(DOWNLOAD_FOLDER_PATH, FilenameUtils.getName(filename));
@@ -49,16 +52,17 @@ public final class DownloadHelperService {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Download of %s to %s asked by %s from %s", completeUrl, filename, user, ip));
                 }
-                final HttpClient httpClient = httpClientService.getHttpClient(completeUrl);
-                final GetMethod getMethod = new GetMethod(completeUrl);
-                getMethod.setFollowRedirects(true);
+                final CloseableHttpClient httpClient = httpClientService.getHttpClient(completeUrl);
+                final HttpGet httpGet = new HttpGet(completeUrl);
                 if (login != null && !login.isEmpty() && password != null && !password.isEmpty()) {
-                    getMethod.setDoAuthentication(true);
-                    getMethod.addRequestHeader(
-                            "Authorization", "Basic " + new String(Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
+                    httpGet.addHeader("Authorization", "Basic " + new String(Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
                 }
-                httpClient.executeMethod(getMethod);
-                inputStream = getMethod.getResponseBodyAsStream();
+
+                final CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
+                    final HttpEntity entity = httpResponse.getEntity();
+                    if(entity != null){
+                        inputStream = entity.getContent();
+                    }
 
             } else if ("ftp".equals(protocol)) {
                 completeUrl = String.format("ftp://%s:XXXXX@%s", login, url);
@@ -85,7 +89,7 @@ public final class DownloadHelperService {
             LOGGER.error(String.format("Download of %s to %s asked by %s from %s has failed", completeUrl, filename, user, ip), ex);
             sendEmail(url, filename, ccEmail, ip, user, Email.DOWNLOAD_FAILED_SUBJECT);
         } finally {
-            IOUtils.closeQuietly(inputStream);
+            IOUtils.close(inputStream);
         }
     }
 
