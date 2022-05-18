@@ -58,9 +58,9 @@ public final class DownloadHelperService {
                     httpGet.addHeader("Authorization", "Basic " + new String(Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
                 }
 
-                CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
+                final CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
                     final HttpEntity entity = httpResponse.getEntity();
-                    if(entity!=null){
+                    if(entity != null){
                         inputStream = entity.getContent();
                     }
 
