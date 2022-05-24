@@ -8,10 +8,13 @@ import org.apache.commons.io.FileSystemUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.services.render.RenderContext;
 import org.jahia.settings.SettingsBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.webflow.execution.RequestContext;
 
 public class DownloadHelperHandler implements Serializable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(DownloadHelperHandler.class);
     private static final long serialVersionUID = -6552768415414069547L;
     private static final String[] UNITS = new String[]{"KiB", "MiB", "GiB", "TiB"};
     private static final int KILO_CONSTANT = 1024;
@@ -37,7 +40,11 @@ public class DownloadHelperHandler implements Serializable {
             @Override
             public void run() {
                 final DownloadHelperService service = DownloadHelperService.getInstance();
-                service.download(protocol, url, login, password, filename, email, ip, currentUser);
+                try {
+                    service.download(protocol, url, login, password, filename, email, ip, currentUser);
+                } catch (IOException e) {
+                    LOGGER.error("Download failed: ", e);
+                }
             }
         }).start();
     }
