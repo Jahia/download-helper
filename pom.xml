@@ -10,7 +10,7 @@
     <groupId>org.jahia.modules</groupId>
     <artifactId>download-helper</artifactId>
     <name>download-helper</name>
-    <version>2.0.1-SNAPSHOT</version>    
+    <version>2.0.2-SNAPSHOT</version>    
     <packaging>bundle</packaging>
     <description>This is the custom module (download-helper) for running on a Digital Experience Manager server.</description>
 
