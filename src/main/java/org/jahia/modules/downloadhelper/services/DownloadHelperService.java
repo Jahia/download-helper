@@ -59,14 +59,20 @@ public final class DownloadHelperService {
                 if (login != null && !login.isEmpty() && password != null && !password.isEmpty()) {
                     httpGet.addHeader("Authorization", "Basic " + new String(Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
                 }
-
-                final CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
-                final HttpEntity entity = httpResponse.getEntity();
-                final int statusCode = httpResponse.getCode();
-                if (entity != null && HttpStatus.SC_OK == statusCode) {
-                    inputStream = entity.getContent();
-                } else {
-                    result = false;
+                httpGet.addHeader(org.apache.http.HttpHeaders.USER_AGENT, "Jahia - Download Helper");
+                try ( CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
+                    final HttpEntity entity = httpResponse.getEntity();
+                    final int statusCode = httpResponse.getCode();
+                    if (entity != null && HttpStatus.SC_OK == statusCode) {
+                        inputStream = entity.getContent();
+                        Files.copy(
+                                inputStream,
+                                targetFile.toPath(),
+                                StandardCopyOption.REPLACE_EXISTING);
+                    } else {
+                        LOGGER.info(String.format("Download of %s to %s asked by %s from %s has failed", completeUrl, filename, user, ip));
+                        result = false;
+                    }
                 }
 
             } else if ("ftp".equals(protocol)) {
@@ -78,16 +84,13 @@ public final class DownloadHelperService {
                 final String ftpUrl = String.format("ftp://%s:%s@%s", login, password, url);
                 final URLConnection urlConnection = new URL(ftpUrl).openConnection();
                 inputStream = urlConnection.getInputStream();
-            } else {
-                result = false;
-                throw new UnsupportedOperationException("Only https or FTP are allowed");
-            }
-
-            if (result) {
                 Files.copy(
                         inputStream,
                         targetFile.toPath(),
                         StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                result = false;
+                throw new UnsupportedOperationException("Only https or FTP are allowed");
             }
 
         } catch (Exception ex) {
