@@ -44,6 +44,7 @@ public final class DownloadHelperService {
             String ip, String user) throws IOException {
         String completeUrl = "unknown";
         InputStream inputStream = null;
+        CloseableHttpResponse httpResponse = null;
         final File targetFile = new File(DOWNLOAD_FOLDER_PATH, FilenameUtils.getName(filename));
         try {
             if ("https".equals(protocol)) {
@@ -58,11 +59,11 @@ public final class DownloadHelperService {
                     httpGet.addHeader("Authorization", "Basic " + new String(Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
                 }
 
-                final CloseableHttpResponse httpResponse = httpClient.execute(httpGet);
-                    final HttpEntity entity = httpResponse.getEntity();
-                    if(entity != null){
-                        inputStream = entity.getContent();
-                    }
+                httpResponse = httpClient.execute(httpGet);
+                final HttpEntity entity = httpResponse.getEntity();
+                if (entity != null) {
+                    inputStream = entity.getContent();
+                }
 
             } else if ("ftp".equals(protocol)) {
                 completeUrl = String.format("ftp://%s:XXXXX@%s", login, url);
@@ -90,6 +91,7 @@ public final class DownloadHelperService {
             sendEmail(url, filename, ccEmail, ip, user, Email.DOWNLOAD_FAILED_SUBJECT);
         } finally {
             IOUtils.close(inputStream);
+            IOUtils.close(httpResponse);
         }
     }
 
