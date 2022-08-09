@@ -59,6 +59,7 @@ public final class DownloadHelperService {
                 if (login != null && !login.isEmpty() && password != null && !password.isEmpty()) {
                     httpGet.addHeader("Authorization", "Basic " + new String(Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
                 }
+
                 httpGet.addHeader(org.apache.http.HttpHeaders.USER_AGENT, "Jahia - Download Helper");
                 try ( CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
                     final HttpEntity entity = httpResponse.getEntity();
