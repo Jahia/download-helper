@@ -17,6 +17,7 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.util.Base64;
+import org.apache.hc.core5.http.HttpStatus;
 import org.jahia.modules.downloadhelper.constants.Email;
 import org.jahia.services.mail.MailService;
 import org.jahia.services.notification.HttpClientService;
@@ -44,8 +45,8 @@ public final class DownloadHelperService {
             String ip, String user) throws IOException {
         String completeUrl = "unknown";
         InputStream inputStream = null;
-        CloseableHttpResponse httpResponse = null;
         final File targetFile = new File(DOWNLOAD_FOLDER_PATH, FilenameUtils.getName(filename));
+        boolean result = true;
         try {
             if ("https".equals(protocol)) {
                 completeUrl = "https://" + url;
@@ -59,10 +60,20 @@ public final class DownloadHelperService {
                     httpGet.addHeader("Authorization", "Basic " + new String(Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
                 }
 
-                httpResponse = httpClient.execute(httpGet);
-                final HttpEntity entity = httpResponse.getEntity();
-                if (entity != null) {
-                    inputStream = entity.getContent();
+                httpGet.addHeader(org.apache.http.HttpHeaders.USER_AGENT, "Jahia - Download Helper");
+                try ( CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
+                    final HttpEntity entity = httpResponse.getEntity();
+                    final int statusCode = httpResponse.getCode();
+                    if (entity != null && HttpStatus.SC_OK == statusCode) {
+                        inputStream = entity.getContent();
+                        Files.copy(
+                                inputStream,
+                                targetFile.toPath(),
+                                StandardCopyOption.REPLACE_EXISTING);
+                    } else {
+                        LOGGER.info(String.format("Download of %s to %s asked by %s from %s has failed", completeUrl, filename, user, ip));
+                        result = false;
+                    }
                 }
 
             } else if ("ftp".equals(protocol)) {
@@ -74,24 +85,28 @@ public final class DownloadHelperService {
                 final String ftpUrl = String.format("ftp://%s:%s@%s", login, password, url);
                 final URLConnection urlConnection = new URL(ftpUrl).openConnection();
                 inputStream = urlConnection.getInputStream();
+                Files.copy(
+                        inputStream,
+                        targetFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
             } else {
+                result = false;
                 throw new UnsupportedOperationException("Only https or FTP are allowed");
             }
 
-            Files.copy(
-                    inputStream,
-                    targetFile.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING);
-            sendEmail(url, filename, ccEmail, ip, user, Email.DOWNLOAD_COMPLETED_SUBJECT);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(String.format("Download of %s to %s asked by %s from %s is complete", completeUrl, filename, user, ip));
-            }
         } catch (Exception ex) {
             LOGGER.error(String.format("Download of %s to %s asked by %s from %s has failed", completeUrl, filename, user, ip), ex);
-            sendEmail(url, filename, ccEmail, ip, user, Email.DOWNLOAD_FAILED_SUBJECT);
+            result = false;
         } finally {
+            if (result) {
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info(String.format("Download of %s to %s asked by %s from %s is complete", completeUrl, filename, user, ip));
+                }
+                sendEmail(url, filename, ccEmail, ip, user, Email.DOWNLOAD_COMPLETED_SUBJECT);
+            } else {
+                sendEmail(url, filename, ccEmail, ip, user, Email.DOWNLOAD_FAILED_SUBJECT);
+            }
             IOUtils.close(inputStream);
-            IOUtils.close(httpResponse);
         }
     }
 
