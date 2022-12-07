@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -82,7 +83,8 @@ public final class DownloadHelperService {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info(String.format("Download of %s to %s asked by %s from %s", completeUrl, filename, user, ip));
                 }
-                final String ftpUrl = String.format("ftp://%s:%s@%s", login, password, url);
+                final String encodedLogin = URLEncoder.encode(login, StandardCharsets.UTF_8.toString());
+                final String ftpUrl = String.format("ftp://%s:%s@%s", encodedLogin, password, url);
                 final URLConnection urlConnection = new URL(ftpUrl).openConnection();
                 inputStream = urlConnection.getInputStream();
                 Files.copy(
