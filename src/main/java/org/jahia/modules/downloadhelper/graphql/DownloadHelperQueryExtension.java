@@ -7,6 +7,7 @@ import graphql.annotations.annotationTypes.GraphQLTypeExtension;
 import org.apache.commons.io.FileSystemUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
+import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
 import org.jahia.services.SpringContextSingleton;
 import org.jahia.services.mail.MailService;
 import org.jahia.settings.SettingsBean;
@@ -37,6 +38,7 @@ public class DownloadHelperQueryExtension {
     @GraphQLField
     @GraphQLName("downloadHelperInfo")
     @GraphQLDescription("Returns server information for the download helper admin panel")
+    @GraphQLRequiresPermission("adminSystemInfos")
     public static GqlServerInfo getDownloadHelperInfo() {
         final boolean isProcessingServer = SettingsBean.getInstance().isProcessingServer();
         String availableSpace = "0";
@@ -62,6 +64,7 @@ public class DownloadHelperQueryExtension {
     @GraphQLField
     @GraphQLName("downloadHelperFiles")
     @GraphQLDescription("Lists files present in the download folder, sorted by last modified date descending")
+    @GraphQLRequiresPermission("adminSystemInfos")
     public static List<GqlDownloadedFile> getDownloadHelperFiles() {
         final File folder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
         if (!folder.exists() || !folder.isDirectory()) {

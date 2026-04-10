@@ -7,6 +7,7 @@ import graphql.annotations.annotationTypes.GraphQLNonNull;
 import graphql.annotations.annotationTypes.GraphQLTypeExtension;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
+import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
 import org.jahia.osgi.BundleUtils;
 import org.jahia.services.content.JCRSessionFactory;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ public class DownloadHelperMutationExtension {
     @GraphQLField
     @GraphQLName("downloadHelperTrigger")
     @GraphQLDescription("Triggers an asynchronous file download on the server")
+    @GraphQLRequiresPermission("adminSystemInfos")
     public static Boolean triggerDownload(
             @GraphQLName("protocol") @GraphQLNonNull final String protocol,
             @GraphQLName("url") @GraphQLNonNull final String url,
@@ -57,6 +59,7 @@ public class DownloadHelperMutationExtension {
     @GraphQLField
     @GraphQLName("downloadHelperDeleteFile")
     @GraphQLDescription("Deletes a file from the download folder")
+    @GraphQLRequiresPermission("adminSystemInfos")
     public static Boolean deleteFile(
             @GraphQLName("filename") @GraphQLNonNull final String filename) {
 
