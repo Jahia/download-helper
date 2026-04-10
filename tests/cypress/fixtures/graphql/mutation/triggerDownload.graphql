@@ -1,0 +1,17 @@
+mutation TriggerDownload(
+    $protocol: String!
+    $url: String!
+    $filename: String!
+    $login: String
+    $password: String
+    $email: String
+) {
+    downloadHelperTrigger(
+        protocol: $protocol
+        url: $url
+        filename: $filename
+        login: $login
+        password: $password
+        email: $email
+    )
+}

@@ -1,0 +1,8 @@
+query GetDownloadHelperInfo {
+    downloadHelperInfo {
+        isProcessingServer
+        availableSpace
+        downloadFolderPath
+        isMailActivated
+    }
+}

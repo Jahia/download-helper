@@ -1,0 +1,3 @@
+mutation DeleteDownloadedFile($filename: String!) {
+    downloadHelperDeleteFile(filename: $filename)
+}

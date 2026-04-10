@@ -1,0 +1,7 @@
+query GetDownloadHelperFiles {
+    downloadHelperFiles {
+        name
+        size
+        lastModified
+    }
+}
