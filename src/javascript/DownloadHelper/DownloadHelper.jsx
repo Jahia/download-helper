@@ -5,6 +5,26 @@ import {Button, Field, Input, Typography} from '@jahia/moonstone';
 import styles from './DownloadHelper.scss';
 import {GET_DOWNLOAD_HELPER_INFO, TRIGGER_DOWNLOAD} from './DownloadHelper.gql';
 
+const PROTOCOL_PREFIXES = ['https://', 'ftp://'];
+
+const extractProtocol = url => {
+    if (url.startsWith('ftp://')) {
+        return 'ftp';
+    }
+
+    return 'https';
+};
+
+const stripProtocol = url => {
+    for (const prefix of PROTOCOL_PREFIXES) {
+        if (url.startsWith(prefix)) {
+            return url.slice(prefix.length);
+        }
+    }
+
+    return url;
+};
+
 const extractFilename = url => {
     if (!url) {
         return '';
@@ -135,7 +155,13 @@ export function DownloadHelperAdmin() {
                         id="dh-url"
                         value={url}
                         onChange={e => {
-                            const newUrl = e.target.value;
+                            const raw = e.target.value;
+                            const hasPrefix = PROTOCOL_PREFIXES.some(p => raw.startsWith(p));
+                            const newUrl = hasPrefix ? stripProtocol(raw) : raw;
+                            if (hasPrefix) {
+                                setProtocol(extractProtocol(raw));
+                            }
+
                             setUrl(newUrl);
                             if (!filenameManuallySet.current) {
                                 setFilename(extractFilename(newUrl));

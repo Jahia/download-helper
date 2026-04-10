@@ -7,6 +7,7 @@ import graphql.annotations.annotationTypes.GraphQLNonNull;
 import graphql.annotations.annotationTypes.GraphQLTypeExtension;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
+import org.jahia.osgi.BundleUtils;
 import org.jahia.services.content.JCRSessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,12 +32,17 @@ public class DownloadHelperMutationExtension {
             @GraphQLName("password") final String password,
             @GraphQLName("email") final String email) {
 
+        final DownloadHelperService service = BundleUtils.getOsgiService(DownloadHelperService.class, null);
+        if (service == null) {
+            LOGGER.error("DownloadHelperService is not available");
+            return Boolean.FALSE;
+        }
+
         final String currentUser = JCRSessionFactory.getInstance().getCurrentUser().getUserKey();
 
         new Thread(() -> {
             try {
-                DownloadHelperService.getInstance().download(
-                        protocol, url, login, password, filename, email, "unknown", currentUser);
+                service.download(protocol, url, login, password, filename, email, "unknown", currentUser);
             } catch (IOException e) {
                 LOGGER.error("Async download failed for url={} filename={} user={}", url, filename, currentUser, e);
             }
