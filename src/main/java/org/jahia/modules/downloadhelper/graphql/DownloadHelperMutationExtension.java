@@ -1,10 +1,7 @@
 package org.jahia.modules.downloadhelper.graphql;
 
-import graphql.annotations.annotationTypes.GraphQLDescription;
-import graphql.annotations.annotationTypes.GraphQLField;
-import graphql.annotations.annotationTypes.GraphQLName;
-import graphql.annotations.annotationTypes.GraphQLNonNull;
-import graphql.annotations.annotationTypes.GraphQLTypeExtension;
+import graphql.annotations.annotationTypes.*;
+import org.apache.commons.io.FilenameUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
 import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
@@ -13,10 +10,9 @@ import org.jahia.services.content.JCRSessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.commons.io.FilenameUtils;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 @GraphQLTypeExtension(DXGraphQLProvider.Mutation.class)
 @GraphQLName("DownloadHelperMutations")
@@ -24,6 +20,9 @@ import java.io.IOException;
 public class DownloadHelperMutationExtension {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DownloadHelperMutationExtension.class);
+
+    private DownloadHelperMutationExtension() {
+    }
 
     @GraphQLField
     @GraphQLName("downloadHelperTrigger")
@@ -47,7 +46,7 @@ public class DownloadHelperMutationExtension {
 
         new Thread(() -> {
             try {
-                service.download(protocol, url, login, password, filename, email, "unknown", currentUser);
+                service.download(protocol, url, login, password, filename, email, currentUser);
             } catch (IOException e) {
                 LOGGER.error("Async download failed for url={} filename={} user={}", url, filename, currentUser, e);
             }
@@ -86,11 +85,12 @@ public class DownloadHelperMutationExtension {
             return Boolean.FALSE;
         }
 
-        final boolean deleted = file.delete();
-        if (!deleted) {
-            LOGGER.warn("Could not delete file: {}", file.getAbsolutePath());
+        try {
+            Files.delete(file.toPath());
+            return Boolean.TRUE;
+        } catch (IOException e) {
+            LOGGER.warn("Could not delete file: {}", file.getAbsolutePath(), e);
+            return Boolean.FALSE;
         }
-
-        return deleted;
     }
 }

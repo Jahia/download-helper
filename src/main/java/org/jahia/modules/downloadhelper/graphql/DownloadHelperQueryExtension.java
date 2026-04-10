@@ -4,7 +4,6 @@ import graphql.annotations.annotationTypes.GraphQLDescription;
 import graphql.annotations.annotationTypes.GraphQLField;
 import graphql.annotations.annotationTypes.GraphQLName;
 import graphql.annotations.annotationTypes.GraphQLTypeExtension;
-import org.apache.commons.io.FileSystemUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
 import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
@@ -16,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
 public class DownloadHelperQueryExtension {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DownloadHelperQueryExtension.class);
-    private static final String[] UNITS = {"KiB", "MiB", "GiB", "TiB"};
+    private static final String[] UNITS = {"B", "KiB", "MiB", "GiB", "TiB"};
     private static final int KILO_CONSTANT = 1024;
 
     private DownloadHelperQueryExtension() {
@@ -52,11 +53,14 @@ public class DownloadHelperQueryExtension {
         String availableSpace = "0";
         if (downloadFolder.exists()) {
             try {
-                final long spaceKb = FileSystemUtils.freeSpaceKb(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
-                if (spaceKb > 0) {
-                    final int digitGroups = (int) (Math.log10(spaceKb) / Math.log10(KILO_CONSTANT));
+                final long spaceBytes = Files.getFileStore(
+                        Paths.get(DownloadHelperService.DOWNLOAD_FOLDER_PATH)).getUsableSpace();
+                if (spaceBytes > 0) {
+                    final int digitGroups = Math.min(
+                            (int) (Math.log10(spaceBytes) / Math.log10(KILO_CONSTANT)),
+                            UNITS.length - 1);
                     availableSpace = new DecimalFormat("#,##0.#")
-                            .format(spaceKb / Math.pow(KILO_CONSTANT, digitGroups))
+                            .format(spaceBytes / Math.pow(KILO_CONSTANT, digitGroups))
                             + " " + UNITS[digitGroups];
                 }
             } catch (IOException e) {

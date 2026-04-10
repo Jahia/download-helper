@@ -3,7 +3,12 @@ import {useMutation, useQuery} from '@apollo/client';
 import {useTranslation} from 'react-i18next';
 import {Button, Delete, Field, Input, Tooltip, Typography} from '@jahia/moonstone';
 import styles from './DownloadHelper.scss';
-import {DELETE_DOWNLOADED_FILE, GET_DOWNLOAD_HELPER_FILES, GET_DOWNLOAD_HELPER_INFO, TRIGGER_DOWNLOAD} from './DownloadHelper.gql';
+import {
+    DELETE_DOWNLOADED_FILE,
+    GET_DOWNLOAD_HELPER_FILES,
+    GET_DOWNLOAD_HELPER_INFO,
+    TRIGGER_DOWNLOAD
+} from './DownloadHelper.gql';
 
 const PROTOCOL_PREFIXES = ['https://', 'ftp://'];
 
@@ -248,32 +253,32 @@ export function DownloadHelperAdmin() {
                 ) : filesData && filesData.downloadHelperFiles && filesData.downloadHelperFiles.length > 0 ? (
                     <table className={styles.downloadHelper_files_table}>
                         <thead className={styles.downloadHelper_files_thead}>
-                            <tr>
-                                <th>{t('files.name')}</th>
-                                <th>{t('files.size')}</th>
-                                <th>{t('files.lastModified')}</th>
-                                <th/>
-                            </tr>
+                        <tr>
+                            <th>{t('files.name')}</th>
+                            <th>{t('files.size')}</th>
+                            <th>{t('files.lastModified')}</th>
+                            <th/>
+                        </tr>
                         </thead>
                         <tbody>
-                            {filesData.downloadHelperFiles.map(file => (
-                                <tr key={file.name} className={styles.downloadHelper_file_row}>
-                                    <td className={styles.downloadHelper_file_name}>{file.name}</td>
-                                    <td className={styles.downloadHelper_file_meta}>{file.size}</td>
-                                    <td className={styles.downloadHelper_file_meta}>{file.lastModified}</td>
-                                    <td className={styles.downloadHelper_file_actions}>
-                                        <Tooltip label={t('label.delete')}>
-                                            <button
-                                                className={styles.downloadHelper_icon_btn}
-                                                disabled={deleting}
-                                                onClick={() => deleteFile({variables: {filename: file.name}})}
-                                            >
-                                                <Delete/>
-                                            </button>
-                                        </Tooltip>
-                                    </td>
-                                </tr>
-                            ))}
+                        {filesData.downloadHelperFiles.map(file => (
+                            <tr key={file.name} className={styles.downloadHelper_file_row}>
+                                <td className={styles.downloadHelper_file_name}>{file.name}</td>
+                                <td className={styles.downloadHelper_file_meta}>{file.size}</td>
+                                <td className={styles.downloadHelper_file_meta}>{file.lastModified}</td>
+                                <td className={styles.downloadHelper_file_actions}>
+                                    <Tooltip label={t('label.delete')}>
+                                        <button
+                                            className={styles.downloadHelper_icon_btn}
+                                            disabled={deleting}
+                                            onClick={() => deleteFile({variables: {filename: file.name}})}
+                                        >
+                                            <Delete/>
+                                        </button>
+                                    </Tooltip>
+                                </td>
+                            </tr>
+                        ))}
                         </tbody>
                     </table>
                 ) : (
