@@ -239,7 +239,6 @@ export function DownloadHelperAdmin() {
                         label={t('label.refresh')}
                         variant="ghost"
                         size="small"
-                        isDisabled={filesLoading}
                         onClick={() => refetchFiles()}
                     />
                 </div>

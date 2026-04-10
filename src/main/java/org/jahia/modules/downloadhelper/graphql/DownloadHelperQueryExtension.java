@@ -41,17 +41,27 @@ public class DownloadHelperQueryExtension {
     @GraphQLRequiresPermission("adminSystemInfos")
     public static GqlServerInfo getDownloadHelperInfo() {
         final boolean isProcessingServer = SettingsBean.getInstance().isProcessingServer();
-        String availableSpace = "0";
-        try {
-            final long spaceKb = FileSystemUtils.freeSpaceKb(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
-            if (spaceKb > 0) {
-                final int digitGroups = (int) (Math.log10(spaceKb) / Math.log10(KILO_CONSTANT));
-                availableSpace = new DecimalFormat("#,##0.#")
-                        .format(spaceKb / Math.pow(KILO_CONSTANT, digitGroups))
-                        + " " + UNITS[digitGroups];
+        final File downloadFolder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
+        if (!downloadFolder.exists()) {
+            if (downloadFolder.mkdirs()) {
+                LOGGER.info("Created download folder: {}", DownloadHelperService.DOWNLOAD_FOLDER_PATH);
+            } else {
+                LOGGER.warn("Could not create download folder: {}", DownloadHelperService.DOWNLOAD_FOLDER_PATH);
             }
-        } catch (IOException e) {
-            LOGGER.warn("Could not determine available disk space", e);
+        }
+        String availableSpace = "0";
+        if (downloadFolder.exists()) {
+            try {
+                final long spaceKb = FileSystemUtils.freeSpaceKb(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
+                if (spaceKb > 0) {
+                    final int digitGroups = (int) (Math.log10(spaceKb) / Math.log10(KILO_CONSTANT));
+                    availableSpace = new DecimalFormat("#,##0.#")
+                            .format(spaceKb / Math.pow(KILO_CONSTANT, digitGroups))
+                            + " " + UNITS[digitGroups];
+                }
+            } catch (IOException e) {
+                LOGGER.warn("Could not determine available disk space", e);
+            }
         }
 
         final MailService mailService = (MailService) SpringContextSingleton.getBean("MailService");

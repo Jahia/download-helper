@@ -155,6 +155,19 @@ public class DownloadHelperService {
             return true;
         }
 
+        final File downloadFolder = new File(DOWNLOAD_FOLDER_PATH);
+        if (!downloadFolder.exists() && !downloadFolder.mkdirs()) {
+            LOGGER.error("Could not create download folder: {}", DOWNLOAD_FOLDER_PATH);
+            sendFolderCreationFailedEmail(url, filename, ccEmail, ip, user);
+            return false;
+        }
+
+        if (!downloadFolder.exists()) {
+            LOGGER.error("Download folder does not exist: {}", DOWNLOAD_FOLDER_PATH);
+            sendFolderCreationFailedEmail(url, filename, ccEmail, ip, user);
+            return false;
+        }
+
         final long freeBytes = FileSystemUtils.freeSpaceKb(DOWNLOAD_FOLDER_PATH) * KILO_CONSTANT;
         if (freeBytes < contentLength) {
             LOGGER.error("Not enough disk space in {}: required={}, available={}", DOWNLOAD_FOLDER_PATH, contentLength, freeBytes);
