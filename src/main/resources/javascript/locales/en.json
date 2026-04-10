@@ -24,6 +24,9 @@
       },
       "load": {
         "failed": "Failed to load server info."
+      },
+      "mail": {
+        "disabled": "The mail service is not activated. Email notifications will not be sent."
       }
     }
   }

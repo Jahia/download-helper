@@ -1,9 +1,24 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {useMutation, useQuery} from '@apollo/client';
 import {useTranslation} from 'react-i18next';
 import {Button, Field, Input, Typography} from '@jahia/moonstone';
 import styles from './DownloadHelper.scss';
 import {GET_DOWNLOAD_HELPER_INFO, TRIGGER_DOWNLOAD} from './DownloadHelper.gql';
+
+const extractFilename = url => {
+    if (!url) {
+        return '';
+    }
+
+    try {
+        const parsed = new URL(url.includes('://') ? url : 'https://' + url);
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        return segments[segments.length - 1] || '';
+    } catch {
+        const segments = url.split('/').filter(Boolean);
+        return (segments[segments.length - 1] || '').split('?')[0];
+    }
+};
 
 export function DownloadHelperAdmin() {
     const {t} = useTranslation('download-helper');
@@ -15,6 +30,7 @@ export function DownloadHelperAdmin() {
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [triggerStatus, setTriggerStatus] = useState(null); // null | 'success' | 'error'
+    const filenameManuallySet = useRef(false);
 
     const {data, loading, error} = useQuery(GET_DOWNLOAD_HELPER_INFO, {fetchPolicy: 'network-only'});
 
@@ -84,6 +100,12 @@ export function DownloadHelperAdmin() {
                 </p>
             </div>
 
+            {!info.isMailActivated && (
+                <div className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--warning']}`}>
+                    {t('downloadHelper.errors.mail.disabled')}
+                </div>
+            )}
+
             {triggerStatus === 'success' && (
                 <div className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--success']}`}>
                     {t('downloadHelper.success.started')}
@@ -112,7 +134,13 @@ export function DownloadHelperAdmin() {
                     <Input
                         id="dh-url"
                         value={url}
-                        onChange={e => setUrl(e.target.value)}
+                        onChange={e => {
+                            const newUrl = e.target.value;
+                            setUrl(newUrl);
+                            if (!filenameManuallySet.current) {
+                                setFilename(extractFilename(newUrl));
+                            }
+                        }}
                         placeholder="example.com/path/to/file"
                     />
                 </Field>
@@ -121,7 +149,10 @@ export function DownloadHelperAdmin() {
                     <Input
                         id="dh-filename"
                         value={filename}
-                        onChange={e => setFilename(e.target.value)}
+                        onChange={e => {
+                            filenameManuallySet.current = true;
+                            setFilename(e.target.value);
+                        }}
                         placeholder="file.zip"
                     />
                 </Field>
@@ -143,12 +174,17 @@ export function DownloadHelperAdmin() {
                     />
                 </Field>
 
-                <Field label={t('label.email')} id="dh-email">
+                <Field
+                    label={t('label.email')}
+                    id="dh-email"
+                    hint={!info.isMailActivated ? t('downloadHelper.errors.mail.disabled') : undefined}
+                >
                     <Input
                         id="dh-email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         placeholder="admin@example.com"
+                        isDisabled={!info.isMailActivated}
                     />
                 </Field>
 

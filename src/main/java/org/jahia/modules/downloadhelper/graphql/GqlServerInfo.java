@@ -11,11 +11,13 @@ public class GqlServerInfo {
     private final boolean processingServer;
     private final String availableSpace;
     private final String downloadFolderPath;
+    private final boolean mailActivated;
 
-    public GqlServerInfo(boolean processingServer, String availableSpace, String downloadFolderPath) {
+    public GqlServerInfo(boolean processingServer, String availableSpace, String downloadFolderPath, boolean mailActivated) {
         this.processingServer = processingServer;
         this.availableSpace = availableSpace;
         this.downloadFolderPath = downloadFolderPath;
+        this.mailActivated = mailActivated;
     }
 
     @GraphQLField
@@ -37,5 +39,12 @@ public class GqlServerInfo {
     @GraphQLDescription("Path to the download folder")
     public String getDownloadFolderPath() {
         return downloadFolderPath;
+    }
+
+    @GraphQLField
+    @GraphQLName("isMailActivated")
+    @GraphQLDescription("Whether the mail service is activated (MailSettings.isServiceActivated)")
+    public boolean isMailActivated() {
+        return mailActivated;
     }
 }

@@ -6,6 +6,7 @@ export const GET_DOWNLOAD_HELPER_INFO = gql`
             isProcessingServer
             availableSpace
             downloadFolderPath
+            isMailActivated
         }
     }
 `;

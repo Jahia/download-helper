@@ -7,6 +7,8 @@ import graphql.annotations.annotationTypes.GraphQLTypeExtension;
 import org.apache.commons.io.FileSystemUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
+import org.jahia.services.SpringContextSingleton;
+import org.jahia.services.mail.MailService;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +46,10 @@ public class DownloadHelperQueryExtension {
             LOGGER.warn("Could not determine available disk space", e);
         }
 
-        return new GqlServerInfo(isProcessingServer, availableSpace, DownloadHelperService.DOWNLOAD_FOLDER_PATH);
+        final MailService mailService = (MailService) SpringContextSingleton.getBean("MailService");
+        final boolean isMailActivated = mailService != null && mailService.getSettings() != null
+                && mailService.getSettings().isServiceActivated();
+
+        return new GqlServerInfo(isProcessingServer, availableSpace, DownloadHelperService.DOWNLOAD_FOLDER_PATH, isMailActivated);
     }
 }

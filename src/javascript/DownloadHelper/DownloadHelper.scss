@@ -65,6 +65,12 @@
     border-color: var(--color-danger, #f44053);
     color: var(--color-danger_dark, #840d0f);
   }
+
+  &--warning {
+    background: #fff8e1;
+    border-color: var(--color-warning, #ff9800);
+    color: #7a4f00;
+  }
 }
 
 .downloadHelper_form {
