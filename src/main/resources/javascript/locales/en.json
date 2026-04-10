@@ -1,3 +1,30 @@
 {
-  "label" : "Download Helper"
+  "label": {
+    "menu_entry": "Download Helper",
+    "protocol": "Protocol",
+    "url": "URL",
+    "filename": "Filename",
+    "login": "Login (optional)",
+    "password": "Password (only if login)",
+    "email": "Email",
+    "trigger": "Start download",
+    "triggering": "Starting…",
+    "loading": "Loading…"
+  },
+  "downloadHelper": {
+    "settings": "Download Helper",
+    "info": "Available: {{availableSpace}} in {{downloadFolderPath}}",
+    "notProcessingServer": "This module can only be used on the processing server.",
+    "success": {
+      "started": "Download started."
+    },
+    "errors": {
+      "trigger": {
+        "failed": "Failed to trigger the download."
+      },
+      "load": {
+        "failed": "Failed to load server info."
+      }
+    }
+  }
 }
