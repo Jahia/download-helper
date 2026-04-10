@@ -12,6 +12,9 @@ import org.jahia.services.content.JCRSessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.commons.io.FilenameUtils;
+
+import java.io.File;
 import java.io.IOException;
 
 @GraphQLTypeExtension(DXGraphQLProvider.Mutation.class)
@@ -49,5 +52,42 @@ public class DownloadHelperMutationExtension {
         }).start();
 
         return Boolean.TRUE;
+    }
+
+    @GraphQLField
+    @GraphQLName("downloadHelperDeleteFile")
+    @GraphQLDescription("Deletes a file from the download folder")
+    public static Boolean deleteFile(
+            @GraphQLName("filename") @GraphQLNonNull final String filename) {
+
+        final String safeName = FilenameUtils.getName(filename);
+        if (safeName.isEmpty()) {
+            LOGGER.warn("Rejected empty or path-only filename: {}", filename);
+            return Boolean.FALSE;
+        }
+
+        final File file = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH, safeName);
+        try {
+            final String canonicalFile = file.getCanonicalPath();
+            final String canonicalFolder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH).getCanonicalPath();
+            if (!canonicalFile.startsWith(canonicalFolder + File.separator)) {
+                LOGGER.warn("Path traversal attempt rejected for filename: {}", filename);
+                return Boolean.FALSE;
+            }
+        } catch (IOException e) {
+            LOGGER.error("Could not resolve canonical path for filename: {}", filename, e);
+            return Boolean.FALSE;
+        }
+
+        if (!file.exists()) {
+            return Boolean.FALSE;
+        }
+
+        final boolean deleted = file.delete();
+        if (!deleted) {
+            LOGGER.warn("Could not delete file: {}", file.getAbsolutePath());
+        }
+
+        return deleted;
     }
 }

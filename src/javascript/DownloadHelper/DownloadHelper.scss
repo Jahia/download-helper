@@ -103,3 +103,101 @@
   gap: var(--spacing-small, 8px);
   margin-top: var(--spacing-small, 8px);
 }
+
+.downloadHelper_section {
+  margin-top: var(--spacing-large, 24px);
+  border-top: 1px solid var(--color-gray_light, #dadada);
+  padding-top: var(--spacing-large, 24px);
+}
+
+.downloadHelper_section_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-medium, 16px);
+}
+
+.downloadHelper_section_title {
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-dark, #131c21);
+  margin: 0;
+}
+
+.downloadHelper_files_table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 13px;
+  color: var(--color-dark, #131c21);
+}
+
+.downloadHelper_files_thead th {
+  text-align: left;
+  padding: var(--spacing-small, 8px) var(--spacing-medium, 16px);
+  border-bottom: 2px solid var(--color-gray_light, #dadada);
+  font-weight: 600;
+  color: var(--color-gray, #7a7f88);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.downloadHelper_file_row {
+  &:hover {
+    background: var(--color-light, #fdfdfd);
+  }
+
+  td {
+    padding: var(--spacing-small, 8px) var(--spacing-medium, 16px);
+    border-bottom: 1px solid var(--color-gray_light, #dadada);
+    vertical-align: middle;
+  }
+}
+
+.downloadHelper_file_name {
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.downloadHelper_file_meta {
+  color: var(--color-gray, #7a7f88);
+  white-space: nowrap;
+}
+
+.downloadHelper_file_actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.downloadHelper_icon_btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  border-radius: var(--radius_small, 2px);
+  cursor: pointer;
+  color: var(--color-gray, #7a7f88);
+  transition: color 0.15s, background 0.15s;
+
+  &:hover:not(:disabled) {
+    color: var(--color-danger, #f44053);
+    background: var(--color-danger_light, #fdecea);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.downloadHelper_files_empty {
+  padding: var(--spacing-medium, 16px);
+  text-align: center;
+  color: var(--color-gray, #7a7f88);
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 13px;
+}

@@ -11,6 +11,22 @@ export const GET_DOWNLOAD_HELPER_INFO = gql`
     }
 `;
 
+export const GET_DOWNLOAD_HELPER_FILES = gql`
+    query DownloadHelperFiles {
+        downloadHelperFiles {
+            name
+            size
+            lastModified
+        }
+    }
+`;
+
+export const DELETE_DOWNLOADED_FILE = gql`
+    mutation DeleteDownloadedFile($filename: String!) {
+        downloadHelperDeleteFile(filename: $filename)
+    }
+`;
+
 export const TRIGGER_DOWNLOAD = gql`
     mutation TriggerDownload(
         $protocol: String!

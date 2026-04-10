@@ -13,8 +13,14 @@ import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @GraphQLTypeExtension(DXGraphQLProvider.Query.class)
 @GraphQLName("DownloadHelperQueries")
@@ -51,5 +57,25 @@ public class DownloadHelperQueryExtension {
                 && mailService.getSettings().isServiceActivated();
 
         return new GqlServerInfo(isProcessingServer, availableSpace, DownloadHelperService.DOWNLOAD_FOLDER_PATH, isMailActivated);
+    }
+
+    @GraphQLField
+    @GraphQLName("downloadHelperFiles")
+    @GraphQLDescription("Lists files present in the download folder, sorted by last modified date descending")
+    public static List<GqlDownloadedFile> getDownloadHelperFiles() {
+        final File folder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
+        if (!folder.exists() || !folder.isDirectory()) {
+            return Collections.emptyList();
+        }
+
+        final File[] files = folder.listFiles(File::isFile);
+        if (files == null) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(files)
+                .sorted(Comparator.comparingLong(File::lastModified).reversed())
+                .map(f -> new GqlDownloadedFile(f.getName(), f.length(), f.lastModified()))
+                .collect(Collectors.toList());
     }
 }

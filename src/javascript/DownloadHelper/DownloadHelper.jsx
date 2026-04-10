@@ -1,9 +1,9 @@
 import React, {useRef, useState} from 'react';
 import {useMutation, useQuery} from '@apollo/client';
 import {useTranslation} from 'react-i18next';
-import {Button, Field, Input, Typography} from '@jahia/moonstone';
+import {Button, Delete, Field, Input, Tooltip, Typography} from '@jahia/moonstone';
 import styles from './DownloadHelper.scss';
-import {GET_DOWNLOAD_HELPER_INFO, TRIGGER_DOWNLOAD} from './DownloadHelper.gql';
+import {DELETE_DOWNLOADED_FILE, GET_DOWNLOAD_HELPER_FILES, GET_DOWNLOAD_HELPER_INFO, TRIGGER_DOWNLOAD} from './DownloadHelper.gql';
 
 const PROTOCOL_PREFIXES = ['https://', 'ftp://'];
 
@@ -54,7 +54,15 @@ export function DownloadHelperAdmin() {
 
     const {data, loading, error} = useQuery(GET_DOWNLOAD_HELPER_INFO, {fetchPolicy: 'network-only'});
 
+    const {data: filesData, loading: filesLoading, refetch: refetchFiles} = useQuery(
+        GET_DOWNLOAD_HELPER_FILES, {fetchPolicy: 'network-only'}
+    );
+
     const [triggerDownload, {loading: triggering}] = useMutation(TRIGGER_DOWNLOAD);
+
+    const [deleteFile, {loading: deleting}] = useMutation(DELETE_DOWNLOADED_FILE, {
+        refetchQueries: [{query: GET_DOWNLOAD_HELPER_FILES}]
+    });
 
     const handleSubmit = async () => {
         setTriggerStatus(null);
@@ -222,6 +230,56 @@ export function DownloadHelperAdmin() {
                         onClick={handleSubmit}
                     />
                 </div>
+            </div>
+
+            <div className={styles.downloadHelper_section}>
+                <div className={styles.downloadHelper_section_header}>
+                    <p className={styles.downloadHelper_section_title}>{t('files.title')}</p>
+                    <Button
+                        label={t('label.refresh')}
+                        variant="ghost"
+                        size="small"
+                        isDisabled={filesLoading}
+                        onClick={() => refetchFiles()}
+                    />
+                </div>
+
+                {filesLoading ? (
+                    <div className={styles.downloadHelper_loading}>{t('label.loading')}</div>
+                ) : filesData && filesData.downloadHelperFiles && filesData.downloadHelperFiles.length > 0 ? (
+                    <table className={styles.downloadHelper_files_table}>
+                        <thead className={styles.downloadHelper_files_thead}>
+                            <tr>
+                                <th>{t('files.name')}</th>
+                                <th>{t('files.size')}</th>
+                                <th>{t('files.lastModified')}</th>
+                                <th/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filesData.downloadHelperFiles.map(file => (
+                                <tr key={file.name} className={styles.downloadHelper_file_row}>
+                                    <td className={styles.downloadHelper_file_name}>{file.name}</td>
+                                    <td className={styles.downloadHelper_file_meta}>{file.size}</td>
+                                    <td className={styles.downloadHelper_file_meta}>{file.lastModified}</td>
+                                    <td className={styles.downloadHelper_file_actions}>
+                                        <Tooltip label={t('label.delete')}>
+                                            <button
+                                                className={styles.downloadHelper_icon_btn}
+                                                disabled={deleting}
+                                                onClick={() => deleteFile({variables: {filename: file.name}})}
+                                            >
+                                                <Delete/>
+                                            </button>
+                                        </Tooltip>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <div className={styles.downloadHelper_files_empty}>{t('files.empty')}</div>
+                )}
             </div>
         </div>
     );

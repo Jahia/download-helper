@@ -9,7 +9,16 @@
     "email": "Email",
     "trigger": "Start download",
     "triggering": "Starting…",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "delete": "Delete",
+    "refresh": "Refresh"
+  },
+  "files": {
+    "title": "Downloaded files",
+    "empty": "No files in the download folder.",
+    "name": "Name",
+    "size": "Size",
+    "lastModified": "Last modified"
   },
   "downloadHelper": {
     "settings": "Download Helper",
