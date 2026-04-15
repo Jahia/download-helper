@@ -42,6 +42,7 @@ describe('Download Helper', () => {
     it('disables the trigger button when URL or filename is empty', () => {
         cy.login();
         cy.visit(adminPath);
+        cy.get('#dh-url').should('be.visible');
 
         // Both empty — button disabled
         cy.contains('button', 'Start download').should('be.disabled');
@@ -160,6 +161,7 @@ describe('Download Helper', () => {
     it('shows the downloaded files section in the UI', () => {
         cy.login();
         cy.visit(adminPath);
+        cy.get('#dh-url').should('be.visible');
 
         cy.contains('Downloaded files').should('be.visible');
         cy.contains('button', 'Refresh').should('be.visible');
