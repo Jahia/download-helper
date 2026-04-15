@@ -3,15 +3,14 @@ import {DocumentNode} from 'graphql';
 describe('Download Helper', () => {
     const adminPath = '/jahia/administration/downloadHelper';
 
-    let getDownloadHelperInfo: DocumentNode;
-    let getDownloadHelperFiles: DocumentNode;
-    let triggerDownload: DocumentNode;
-    let deleteDownloadedFile: DocumentNode;
-
-    getDownloadHelperInfo = require('graphql-tag/loader!../fixtures/graphql/query/getDownloadHelperInfo.graphql');
-    getDownloadHelperFiles = require('graphql-tag/loader!../fixtures/graphql/query/getDownloadHelperFiles.graphql');
-    triggerDownload = require('graphql-tag/loader!../fixtures/graphql/mutation/triggerDownload.graphql');
-    deleteDownloadedFile = require('graphql-tag/loader!../fixtures/graphql/mutation/deleteDownloadedFile.graphql');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const getDownloadHelperInfo: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/query/getDownloadHelperInfo.graphql');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const getDownloadHelperFiles: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/query/getDownloadHelperFiles.graphql');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const triggerDownload: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/mutation/triggerDownload.graphql');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const deleteDownloadedFile: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/mutation/deleteDownloadedFile.graphql');
 
     before(() => {
         cy.login();
@@ -64,14 +63,15 @@ describe('Download Helper', () => {
     it('auto-detects protocol from a pasted URL and strips it', () => {
         cy.login();
         cy.visit(adminPath);
-        
+
         // Paste an https URL — protocol selector switches and prefix is stripped
         cy.get('#dh-url input').type('https://example.com/file.zip');
         cy.get('#dh-url input').should('have.value', 'example.com/file.zip');
         cy.get('#dh-protocol select').should('have.value', 'https');
-        
+
         // Clear and paste an ftp URL
-        cy.get('#dh-url input').clear().type('ftp://files.example.com/data.tar.gz');
+        cy.get('#dh-url input').clear();
+        cy.get('#dh-url input').type('ftp://files.example.com/data.tar.gz');
         cy.get('#dh-url input').should('have.value', 'files.example.com/data.tar.gz');
         cy.get('#dh-protocol select').should('have.value', 'ftp');
     });
@@ -84,10 +84,12 @@ describe('Download Helper', () => {
         cy.get('#dh-filename input').should('have.value', 'archive.zip');
 
         // Manually override the filename
-        cy.get('#dh-filename input').clear().type('my-custom-name.zip');
+        cy.get('#dh-filename input').clear();
+        cy.get('#dh-filename input').type('my-custom-name.zip');
 
         // Changing the URL should NOT overwrite the manually set filename
-        cy.get('#dh-url input').clear().type('example.com/other/file.tar.gz');
+        cy.get('#dh-url input').clear();
+        cy.get('#dh-url input').type('example.com/other/file.tar.gz');
         cy.get('#dh-filename input').should('have.value', 'my-custom-name.zip');
     });
 
@@ -123,7 +125,7 @@ describe('Download Helper', () => {
         cy.apollo({
             mutation: deleteDownloadedFile,
             variables: {filename: 'addstuff-3.0.0.jar'}
-        })
+        });
     });
 
     it('triggers a download via the interface and checks the downloaded file', () => {
