@@ -204,6 +204,7 @@ export function DownloadHelperAdmin() {
                         id="dh-protocol"
                         className={styles.downloadHelper_select}
                         value={protocol}
+                        aria-label={t('label.protocol')}
                         onChange={e => setProtocol(e.target.value)}
                     >
                         <option value="https">https://</option>
@@ -263,6 +264,7 @@ export function DownloadHelperAdmin() {
                         id="dh-login"
                         value={login}
                         autoComplete="username"
+                        aria-label={t('label.login')}
                         onChange={e => setLogin(e.target.value)}
                     />
                 </Field>
@@ -273,6 +275,7 @@ export function DownloadHelperAdmin() {
                         type="password"
                         value={password}
                         autoComplete="current-password"
+                        aria-label={t('label.password')}
                         onChange={e => setPassword(e.target.value)}
                     />
                 </Field>
@@ -286,6 +289,7 @@ export function DownloadHelperAdmin() {
                         id="dh-email"
                         value={email}
                         autoComplete="email"
+                        aria-label={t('label.email')}
                         aria-describedby={!info.isMailActivated ? 'dh-email-hint' : undefined}
                         onChange={e => setEmail(e.target.value)}
                         placeholder="admin@example.com"

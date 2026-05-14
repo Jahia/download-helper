@@ -21,7 +21,7 @@
 .downloadHelper_error {
   font-family: 'Nunito Sans', sans-serif;
   padding: var(--spacing-medium, 16px);
-  color: var(--color-gray, #5c6370);
+  color: var(--color-gray, #4b5563);
 }
 
 .downloadHelper_error {
@@ -48,7 +48,7 @@
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.5;
-    color: var(--color-gray, #5c6370);
+    color: var(--color-gray, #4b5563);
   }
 }
 
@@ -79,7 +79,7 @@
   &--warning {
     background: #fff8e1;
     border-color: var(--color-warning, #ff9800);
-    color: #7a4f00;
+    color: #6b4300;
   }
 }
 
@@ -150,7 +150,7 @@
   padding: var(--spacing-small, 8px) var(--spacing-medium, 16px);
   border-bottom: 2px solid var(--color-gray_light, #dadada);
   font-weight: 600;
-  color: var(--color-gray, #5c6370);
+  color: var(--color-gray, #4b5563);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -174,7 +174,7 @@
 }
 
 .downloadHelper_file_meta {
-  color: var(--color-gray, #5c6370);
+  color: var(--color-gray, #4b5563);
   white-space: nowrap;
 }
 
@@ -192,7 +192,7 @@
   border: none;
   border-radius: var(--radius_small, 2px);
   cursor: pointer;
-  color: var(--color-gray, #5c6370);
+  color: var(--color-gray, #4b5563);
   transition: color 0.15s, background 0.15s;
 
   &:hover:not(:disabled) {
@@ -219,7 +219,7 @@
 .downloadHelper_files_empty {
   padding: var(--spacing-medium, 16px);
   text-align: center;
-  color: var(--color-gray, #5c6370);
+  color: var(--color-gray, #4b5563);
   font-family: 'Nunito Sans', sans-serif;
   font-size: 0.8125rem;
 }
