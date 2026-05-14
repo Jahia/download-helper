@@ -11,7 +11,8 @@
     "triggering": "Starting…",
     "loading": "Loading…",
     "delete": "Delete",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "actions": "Actions"
   },
   "files": {
     "title": "Downloaded files",

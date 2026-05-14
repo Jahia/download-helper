@@ -54,8 +54,10 @@ export function DownloadHelperAdmin() {
     const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
-    const [triggerStatus, setTriggerStatus] = useState(null); // null | 'success' | 'error'
+    const [triggerStatus, setTriggerStatus] = useState(null);
     const filenameManuallySet = useRef(false);
+    const statusRef = useRef(null);
+    const refreshAreaRef = useRef(null);
 
     const {data, loading, error} = useQuery(GET_DOWNLOAD_HELPER_INFO, {fetchPolicy: 'network-only'});
 
@@ -66,7 +68,11 @@ export function DownloadHelperAdmin() {
     const [triggerDownload, {loading: triggering}] = useMutation(TRIGGER_DOWNLOAD);
 
     const [deleteFile, {loading: deleting}] = useMutation(DELETE_DOWNLOADED_FILE, {
-        refetchQueries: [{query: GET_DOWNLOAD_HELPER_FILES}]
+        refetchQueries: [{query: GET_DOWNLOAD_HELPER_FILES}],
+        onCompleted: () => {
+            const firstFocusable = refreshAreaRef.current?.querySelector('button:not(:disabled)');
+            firstFocusable?.focus();
+        }
     });
 
     const handleSubmit = async () => {
@@ -91,15 +97,21 @@ export function DownloadHelperAdmin() {
             console.error('Failed to trigger download:', err);
             setTriggerStatus('error');
         }
+
+        setTimeout(() => statusRef.current?.focus(), 50);
     };
 
     if (loading) {
-        return <div className={styles.downloadHelper_loading}>{t('label.loading')}</div>;
+        return (
+            <div role="status" aria-live="polite" className={styles.downloadHelper_loading}>
+                {t('label.loading')}
+            </div>
+        );
     }
 
     if (error) {
         return (
-            <div className={styles.downloadHelper_error}>
+            <div role="alert" className={styles.downloadHelper_error}>
                 {t('downloadHelper.errors.load.failed')}: {error.message}
             </div>
         );
@@ -134,23 +146,51 @@ export function DownloadHelperAdmin() {
             </div>
 
             {!info.isMailActivated && (
-                <div className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--warning']}`}>
+                <div role="note" className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--warning']}`}>
                     {t('downloadHelper.errors.mail.disabled')}
                 </div>
             )}
 
+            {/* Persistent live regions — always present so AT registers them before content appears */}
+            <div
+                ref={statusRef}
+                tabIndex={-1}
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                className={styles.downloadHelper_sr_only}
+            >
+                {triggerStatus === 'success' ? t('downloadHelper.success.started') : ''}
+            </div>
+            <div
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
+                className={styles.downloadHelper_sr_only}
+            >
+                {triggerStatus === 'error' ? t('downloadHelper.errors.trigger.failed') : ''}
+            </div>
+
             {triggerStatus === 'success' && (
-                <div className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--success']}`}>
+                <div aria-hidden="true" className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--success']}`}>
                     {t('downloadHelper.success.started')}
                 </div>
             )}
+
             {triggerStatus === 'error' && (
-                <div className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--error']}`}>
+                <div aria-hidden="true" className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--error']}`}>
                     {t('downloadHelper.errors.trigger.failed')}
                 </div>
             )}
 
-            <div className={styles.downloadHelper_form}>
+            <form
+                className={styles.downloadHelper_form}
+                onSubmit={e => {
+                    e.preventDefault();
+                    handleSubmit();
+                }}
+                noValidate
+            >
                 <Field label={t('label.protocol')} id="dh-protocol">
                     <select
                         id="dh-protocol"
@@ -167,6 +207,8 @@ export function DownloadHelperAdmin() {
                     <Input
                         id="dh-url"
                         value={url}
+                        required
+                        aria-required="true"
                         onChange={e => {
                             const raw = e.target.value;
                             const hasPrefix = PROTOCOL_PREFIXES.some(p => raw.startsWith(p));
@@ -188,6 +230,8 @@ export function DownloadHelperAdmin() {
                     <Input
                         id="dh-filename"
                         value={filename}
+                        required
+                        aria-required="true"
                         onChange={e => {
                             filenameManuallySet.current = true;
                             setFilename(e.target.value);
@@ -200,6 +244,7 @@ export function DownloadHelperAdmin() {
                     <Input
                         id="dh-login"
                         value={login}
+                        autoComplete="username"
                         onChange={e => setLogin(e.target.value)}
                     />
                 </Field>
@@ -209,6 +254,7 @@ export function DownloadHelperAdmin() {
                         id="dh-password"
                         type="password"
                         value={password}
+                        autoComplete="current-password"
                         onChange={e => setPassword(e.target.value)}
                     />
                 </Field>
@@ -221,25 +267,36 @@ export function DownloadHelperAdmin() {
                     <Input
                         id="dh-email"
                         value={email}
+                        autoComplete="email"
+                        aria-describedby={!info.isMailActivated ? 'dh-email-hint' : undefined}
                         onChange={e => setEmail(e.target.value)}
                         placeholder="admin@example.com"
                         isDisabled={!info.isMailActivated}
                     />
                 </Field>
 
+                {!info.isMailActivated && (
+                    <span id="dh-email-hint" className={styles.downloadHelper_sr_only}>
+                        {t('downloadHelper.errors.mail.disabled')}
+                    </span>
+                )}
+
                 <div className={styles.downloadHelper_actions}>
                     <Button
+                        type="submit"
                         label={triggering ? t('label.triggering') : t('label.trigger')}
                         variant="primary"
                         isDisabled={triggering || !url || !filename}
                         onClick={handleSubmit}
                     />
                 </div>
-            </div>
+            </form>
 
-            <div className={styles.downloadHelper_section}>
+            <div ref={refreshAreaRef} className={styles.downloadHelper_section}>
                 <div className={styles.downloadHelper_section_header}>
-                    <p className={styles.downloadHelper_section_title}>{t('files.title')}</p>
+                    <h3 id="dh-files-heading" className={styles.downloadHelper_section_title}>
+                        {t('files.title')}
+                    </h3>
                     <Button
                         label={t('label.refresh')}
                         variant="ghost"
@@ -249,36 +306,45 @@ export function DownloadHelperAdmin() {
                 </div>
 
                 {filesLoading ? (
-                    <div className={styles.downloadHelper_loading}>{t('label.loading')}</div>
+                    <div role="status" aria-live="polite" className={styles.downloadHelper_loading}>
+                        {t('label.loading')}
+                    </div>
                 ) : filesData && filesData.downloadHelperFiles && filesData.downloadHelperFiles.length > 0 ? (
-                    <table className={styles.downloadHelper_files_table}>
+                    <table
+                        className={styles.downloadHelper_files_table}
+                        aria-labelledby="dh-files-heading"
+                    >
                         <thead className={styles.downloadHelper_files_thead}>
-                        <tr>
-                            <th>{t('files.name')}</th>
-                            <th>{t('files.size')}</th>
-                            <th>{t('files.lastModified')}</th>
-                            <th/>
-                        </tr>
+                            <tr>
+                                <th scope="col">{t('files.name')}</th>
+                                <th scope="col">{t('files.size')}</th>
+                                <th scope="col">{t('files.lastModified')}</th>
+                                <th scope="col">
+                                    <span className={styles.downloadHelper_sr_only}>{t('label.actions')}</span>
+                                </th>
+                            </tr>
                         </thead>
                         <tbody>
-                        {filesData.downloadHelperFiles.map(file => (
-                            <tr key={file.name} className={styles.downloadHelper_file_row}>
-                                <td className={styles.downloadHelper_file_name}>{file.name}</td>
-                                <td className={styles.downloadHelper_file_meta}>{file.size}</td>
-                                <td className={styles.downloadHelper_file_meta}>{file.lastModified}</td>
-                                <td className={styles.downloadHelper_file_actions}>
-                                    <Tooltip label={t('label.delete')}>
-                                        <button
-                                            className={styles.downloadHelper_icon_btn}
-                                            disabled={deleting}
-                                            onClick={() => deleteFile({variables: {filename: file.name}})}
-                                        >
-                                            <Delete/>
-                                        </button>
-                                    </Tooltip>
-                                </td>
-                            </tr>
-                        ))}
+                            {filesData.downloadHelperFiles.map(file => (
+                                <tr key={file.name} className={styles.downloadHelper_file_row}>
+                                    <td className={styles.downloadHelper_file_name}>{file.name}</td>
+                                    <td className={styles.downloadHelper_file_meta}>{file.size}</td>
+                                    <td className={styles.downloadHelper_file_meta}>{file.lastModified}</td>
+                                    <td className={styles.downloadHelper_file_actions}>
+                                        <Tooltip label={`${t('label.delete')} ${file.name}`}>
+                                            <button
+                                                type="button"
+                                                className={styles.downloadHelper_icon_btn}
+                                                aria-label={`${t('label.delete')} ${file.name}`}
+                                                disabled={deleting}
+                                                onClick={() => deleteFile({variables: {filename: file.name}})}
+                                            >
+                                                <Delete aria-hidden="true" focusable="false"/>
+                                            </button>
+                                        </Tooltip>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 ) : (
