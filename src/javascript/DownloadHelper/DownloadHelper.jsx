@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useMutation, useQuery} from '@apollo/client';
 import {useTranslation} from 'react-i18next';
 import {Button, Delete, Field, Input, Tooltip, Typography} from '@jahia/moonstone';
@@ -48,6 +48,10 @@ const extractFilename = url => {
 export function DownloadHelperAdmin() {
     const {t} = useTranslation('download-helper');
 
+    useEffect(() => {
+        document.title = t('downloadHelper.settings');
+    }, [t]);
+
     const [protocol, setProtocol] = useState('https');
     const [url, setUrl] = useState('');
     const [filename, setFilename] = useState('');
@@ -55,8 +59,9 @@ export function DownloadHelperAdmin() {
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [triggerStatus, setTriggerStatus] = useState(null);
+    const [submitted, setSubmitted] = useState(false);
     const filenameManuallySet = useRef(false);
-    const statusRef = useRef(null);
+    const visibleAlertRef = useRef(null);
     const refreshAreaRef = useRef(null);
 
     const {data, loading, error} = useQuery(GET_DOWNLOAD_HELPER_INFO, {fetchPolicy: 'network-only'});
@@ -76,6 +81,11 @@ export function DownloadHelperAdmin() {
     });
 
     const handleSubmit = async () => {
+        setSubmitted(true);
+        if (!url || !filename) {
+            return;
+        }
+
         setTriggerStatus(null);
         try {
             const result = await triggerDownload({
@@ -98,7 +108,7 @@ export function DownloadHelperAdmin() {
             setTriggerStatus('error');
         }
 
-        setTimeout(() => statusRef.current?.focus(), 50);
+        setTimeout(() => visibleAlertRef.current?.focus(), 50);
     };
 
     if (loading) {
@@ -146,15 +156,13 @@ export function DownloadHelperAdmin() {
             </div>
 
             {!info.isMailActivated && (
-                <div role="note" className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--warning']}`}>
+                <div role="region" aria-label={t('downloadHelper.errors.mail.disabled')} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--warning']}`}>
                     {t('downloadHelper.errors.mail.disabled')}
                 </div>
             )}
 
             {/* Persistent live regions — always present so AT registers them before content appears */}
             <div
-                ref={statusRef}
-                tabIndex={-1}
                 role="status"
                 aria-live="polite"
                 aria-atomic="true"
@@ -172,13 +180,13 @@ export function DownloadHelperAdmin() {
             </div>
 
             {triggerStatus === 'success' && (
-                <div aria-hidden="true" className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--success']}`}>
+                <div ref={visibleAlertRef} tabIndex={-1} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--success']}`}>
                     {t('downloadHelper.success.started')}
                 </div>
             )}
 
             {triggerStatus === 'error' && (
-                <div aria-hidden="true" className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--error']}`}>
+                <div ref={visibleAlertRef} tabIndex={-1} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--error']}`}>
                     {t('downloadHelper.errors.trigger.failed')}
                 </div>
             )}
@@ -209,6 +217,8 @@ export function DownloadHelperAdmin() {
                         value={url}
                         required
                         aria-required="true"
+                        aria-invalid={submitted && !url ? 'true' : undefined}
+                        aria-describedby={submitted && !url ? 'dh-url-error' : undefined}
                         onChange={e => {
                             const raw = e.target.value;
                             const hasPrefix = PROTOCOL_PREFIXES.some(p => raw.startsWith(p));
@@ -224,6 +234,9 @@ export function DownloadHelperAdmin() {
                         }}
                         placeholder="example.com/path/to/file"
                     />
+                    {submitted && !url && (
+                        <span id="dh-url-error" className={styles.downloadHelper_fieldError} role="alert">{t('downloadHelper.errors.url.required')}</span>
+                    )}
                 </Field>
 
                 <Field label={t('label.filename')} id="dh-filename">
@@ -232,12 +245,17 @@ export function DownloadHelperAdmin() {
                         value={filename}
                         required
                         aria-required="true"
+                        aria-invalid={submitted && !filename ? 'true' : undefined}
+                        aria-describedby={submitted && !filename ? 'dh-filename-error' : undefined}
                         onChange={e => {
                             filenameManuallySet.current = true;
                             setFilename(e.target.value);
                         }}
                         placeholder="file.zip"
                     />
+                    {submitted && !filename && (
+                        <span id="dh-filename-error" className={styles.downloadHelper_fieldError} role="alert">{t('downloadHelper.errors.filename.required')}</span>
+                    )}
                 </Field>
 
                 <Field label={t('label.login')} id="dh-login">
@@ -287,7 +305,6 @@ export function DownloadHelperAdmin() {
                         label={triggering ? t('label.triggering') : t('label.trigger')}
                         variant="primary"
                         isDisabled={triggering || !url || !filename}
-                        onClick={handleSubmit}
                     />
                 </div>
             </form>
@@ -298,6 +315,7 @@ export function DownloadHelperAdmin() {
                         {t('files.title')}
                     </h3>
                     <Button
+                        type="button"
                         label={t('label.refresh')}
                         variant="ghost"
                         size="small"
@@ -305,11 +323,11 @@ export function DownloadHelperAdmin() {
                     />
                 </div>
 
-                {filesLoading ? (
-                    <div role="status" aria-live="polite" className={styles.downloadHelper_loading}>
-                        {t('label.loading')}
-                    </div>
-                ) : filesData && filesData.downloadHelperFiles && filesData.downloadHelperFiles.length > 0 ? (
+                <div role="status" aria-live="polite" className={styles.downloadHelper_loading}>
+                    {filesLoading ? t('label.loading') : ''}
+                </div>
+
+                {!filesLoading && filesData && filesData.downloadHelperFiles && filesData.downloadHelperFiles.length > 0 ? (
                     <table
                         className={styles.downloadHelper_files_table}
                         aria-labelledby="dh-files-heading"
@@ -347,9 +365,9 @@ export function DownloadHelperAdmin() {
                             ))}
                         </tbody>
                     </table>
-                ) : (
+                ) : !filesLoading ? (
                     <div className={styles.downloadHelper_files_empty}>{t('files.empty')}</div>
-                )}
+                ) : null}
             </div>
         </div>
     );

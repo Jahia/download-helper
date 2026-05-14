@@ -37,6 +37,12 @@
       },
       "mail": {
         "disabled": "The mail service is not activated. Email notifications will not be sent."
+      },
+      "url": {
+        "required": "URL is required."
+      },
+      "filename": {
+        "required": "Filename is required."
       }
     }
   }
