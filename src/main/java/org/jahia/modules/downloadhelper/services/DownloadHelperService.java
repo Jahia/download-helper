@@ -3,11 +3,14 @@ package org.jahia.modules.downloadhelper.services;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.net.util.Base64;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
 import org.jahia.modules.downloadhelper.constants.Email;
+import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
 import org.jahia.services.mail.MailService;
 import org.jahia.services.notification.HttpClientService;
 import org.osgi.service.component.annotations.Activate;
@@ -32,10 +35,9 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+
+import static org.jahia.modules.downloadhelper.util.UrlSecurityUtils.sanitizeForLog;
 
 @Component(service = DownloadHelperService.class)
 public class DownloadHelperService {
@@ -45,15 +47,6 @@ public class DownloadHelperService {
     private static final int KILO_CONSTANT = 1024;
     private static final String MSG_COULD_NOT_CREATE_FOLDER = "Could not create download folder: {}";
     private static final String DATE_PATTERN = "yyyy/MM/dd 'at' HH:mm:ss z";
-
-    /**
-     * Cloud metadata / well-known SSRF target hostnames that must never be reachable
-     * even from an admin-triggered download.
-     */
-    private static final Set<String> BLOCKED_HOSTS = new HashSet<>(Arrays.asList(
-            "metadata.google.internal",
-            "metadata.goog",
-            "metadata"));
 
     /**
      * SimpleDateFormat is not thread-safe; downloads run in separate threads, so we build a fresh
@@ -81,26 +74,17 @@ public class DownloadHelperService {
     }
 
     /**
-     * Strips CR/LF from a string so attacker-controlled input cannot forge log lines.
-     */
-    private static String sanitizeForLog(String value) {
-        if (value == null) {
-            return null;
-        }
-        return value.replace('\n', '_').replace('\r', '_');
-    }
-
-    /**
-     * Rejects URLs that resolve to loopback, link-local, site-local, any-local, multicast addresses
-     * or to well-known cloud-metadata hostnames. Defense-in-depth against SSRF even though the
-     * caller already requires the {@code adminSystemInfos} permission.
+     * Rejects URLs that resolve to loopback, link-local, site-local, any-local, multicast addresses,
+     * the cloud-metadata IP, or well-known cloud-metadata hostnames. Defense-in-depth against SSRF
+     * even though the caller already requires the {@code adminSystemInfos} permission. The classification
+     * predicates live in {@link UrlSecurityUtils} so they can be unit-tested without DNS.
      */
     private static void assertSafeHost(String host) throws IOException {
         if (host == null || host.isEmpty()) {
             throw new IOException("Empty host is not allowed");
         }
         final String lowerHost = host.toLowerCase();
-        if (BLOCKED_HOSTS.contains(lowerHost)) {
+        if (UrlSecurityUtils.isBlockedHost(host)) {
             throw new IOException("Host is blocked: " + lowerHost);
         }
         final InetAddress[] addresses;
@@ -110,17 +94,8 @@ public class DownloadHelperService {
             throw new IOException("Unknown host: " + lowerHost, e);
         }
         for (InetAddress address : addresses) {
-            if (address.isAnyLocalAddress()
-                    || address.isLoopbackAddress()
-                    || address.isLinkLocalAddress()
-                    || address.isSiteLocalAddress()
-                    || address.isMulticastAddress()) {
-                throw new IOException("Host resolves to a non-routable / private address: " + lowerHost);
-            }
-            // 169.254.169.254 (AWS / Azure / OpenStack metadata) is link-local and already blocked above,
-            // but also reject the canonical address explicitly for clarity.
-            if ("169.254.169.254".equals(address.getHostAddress())) {
-                throw new IOException("Cloud metadata endpoint is blocked: " + lowerHost);
+            if (UrlSecurityUtils.isNonRoutableAddress(address)) {
+                throw new IOException("Host resolves to a non-routable / blocked address: " + lowerHost);
             }
         }
     }
@@ -181,40 +156,74 @@ public class DownloadHelperService {
 
     private boolean downloadHttps(String url, String login, String password, String filename,
             String ccEmail, String user, File targetFile) throws IOException {
-        final String completeUrl = "https://" + url;
-        assertSafeHost(extractHost(completeUrl));
+        final String initialUrl = "https://" + url;
+        assertSafeHost(extractHost(initialUrl));
         sendEmail(url, filename, ccEmail, user, Email.DOWNLOAD_ASKED_SUBJECT);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Download of {} to {} asked by {}",
-                    sanitizeForLog(completeUrl), sanitizeForLog(filename), sanitizeForLog(user));
+                    sanitizeForLog(initialUrl), sanitizeForLog(filename), sanitizeForLog(user));
         }
 
-        final CloseableHttpClient httpClient = httpClientService.getHttpClient(completeUrl);
-        final HttpGet httpGet = new HttpGet(completeUrl);
-        if (login != null && !login.isEmpty() && password != null && !password.isEmpty()) {
-            httpGet.addHeader("Authorization", "Basic " + new String(
-                    Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)),
-                    StandardCharsets.UTF_8));
-        }
+        final CloseableHttpClient httpClient = httpClientService.getHttpClient(initialUrl);
+        String currentUrl = initialUrl;
+        // The shared HttpClient follows redirects automatically, which would let a remote server
+        // 30x-redirect to an internal / metadata host and bypass assertSafeHost (and replay the
+        // Basic credentials to it). We disable automatic redirects and follow them ourselves,
+        // re-validating every hop and only sending credentials to the originally validated host.
+        for (int hop = 0; hop <= UrlSecurityUtils.maxRedirects(); hop++) {
+            assertSafeHost(extractHost(currentUrl));
+            final HttpGet httpGet = new HttpGet(currentUrl);
+            httpGet.setConfig(RequestConfig.custom().setRedirectsEnabled(false).build());
+            if (UrlSecurityUtils.sameHost(currentUrl, initialUrl)
+                    && login != null && !login.isEmpty() && password != null && !password.isEmpty()) {
+                httpGet.addHeader("Authorization", "Basic " + new String(
+                        Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)),
+                        StandardCharsets.UTF_8));
+            }
+            httpGet.addHeader(org.apache.http.HttpHeaders.USER_AGENT, "Jahia - Download Helper");
 
-        httpGet.addHeader(org.apache.http.HttpHeaders.USER_AGENT, "Jahia - Download Helper");
-        try (CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
-            final HttpEntity entity = httpResponse.getEntity();
-            if (entity != null && HttpStatus.SC_OK == httpResponse.getCode()) {
-                if (!hasEnoughSpace(entity.getContentLength(), url, filename, ccEmail, user)) {
-                    return false;
+            try (CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
+                final int statusCode = httpResponse.getCode();
+                if (UrlSecurityUtils.isRedirectStatus(statusCode)) {
+                    currentUrl = nextRedirectUrl(currentUrl, httpResponse);
+                    continue;
                 }
 
-                copyWithLimit(entity.getContent(), targetFile, entity.getContentLength());
-                return true;
-            }
+                final HttpEntity entity = httpResponse.getEntity();
+                if (entity != null && HttpStatus.SC_OK == statusCode) {
+                    if (!hasEnoughSpace(entity.getContentLength(), url, filename, ccEmail, user)) {
+                        return false;
+                    }
 
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Download of {} to {} asked by {} has failed",
-                        sanitizeForLog(completeUrl), sanitizeForLog(filename), sanitizeForLog(user));
+                    copyWithLimit(entity.getContent(), targetFile, entity.getContentLength());
+                    return true;
+                }
+
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Download of {} to {} asked by {} has failed with status {}",
+                            sanitizeForLog(currentUrl), sanitizeForLog(filename), sanitizeForLog(user), statusCode);
+                }
+                return false;
             }
-            return false;
         }
+
+        throw new IOException("Too many redirects (max " + UrlSecurityUtils.maxRedirects() + ")");
+    }
+
+    /**
+     * Resolves and validates the {@code Location} of a redirect response. Only absolute http(s)
+     * targets are honored; the returned URL still gets {@code assertSafeHost}-checked on the next loop hop.
+     */
+    private static String nextRedirectUrl(String currentUrl, CloseableHttpResponse response) throws IOException {
+        final Header locationHeader = response.getFirstHeader("Location");
+        if (locationHeader == null) {
+            throw new IOException("Redirect response without a Location header");
+        }
+        final String resolved = UrlSecurityUtils.resolveLocation(currentUrl, locationHeader.getValue());
+        if (resolved == null || !UrlSecurityUtils.isAllowedHttpScheme(resolved)) {
+            throw new IOException("Refusing to follow redirect to a non-http(s) or unparsable location");
+        }
+        return resolved;
     }
 
     private boolean downloadFtp(String url, String login, String password, String filename,

@@ -76,6 +76,28 @@ yarn install
 - **Chunked-transfer DoS**: when `Content-Length <= 0`, download is now capped at currently-available disk space and aborted if exceeded (previously the size check was skipped entirely).
 - **Thread safety**: `SimpleDateFormat` is instantiated per call via `formatNow()` rather than shared across raw download threads (also avoids ThreadLocal classloader leaks in OSGi).
 
+## Security invariants (do not regress) — SECURITY-746
+
+The SSRF and log-injection predicates live in `org.jahia.modules.downloadhelper.util.UrlSecurityUtils`
+(pure, no DNS/OSGi, fully unit-tested). Do not duplicate them inline — extend the helper instead.
+
+- **No automatic redirect following on the HTTPS download.** `downloadHttps` follows redirects manually
+  in a loop bounded by `UrlSecurityUtils.maxRedirects()` (5). Every hop is re-validated with
+  `assertSafeHost`, so a `302 → http://169.254.169.254/` (or any internal/site-local host) is rejected
+  *before* the connect, not after the SSRF guard has already been passed.
+- **Basic credentials never follow a cross-host redirect.** The `Authorization` header is only added
+  when `UrlSecurityUtils.sameHost(currentUrl, initialUrl)` — admin-supplied credentials cannot leak
+  to a redirect target.
+- **Only `http`/`https` redirect schemes are honored.** `file:`, `ftp:`, `gopher:`, `jar:` etc. in a
+  `Location` header are rejected (`UrlSecurityUtils.isAllowedHttpScheme`).
+- **All user-controlled values are sanitized before logging.** Both the service and the mutation
+  extension route through `UrlSecurityUtils.sanitizeForLog` — log-injection is closed in *every* code
+  path that logs `url` / `filename` / `user`, including the async failure catch in the mutation.
+- **Accepted residual: DNS-rebinding TOCTOU.** `assertSafeHost` resolves DNS, then the HTTP client
+  re-resolves at connect time. Fully closing this requires IP pinning via a custom connection manager;
+  given the `adminSystemInfos` permission gate it is documented as an accepted residual rather than
+  fixed.
+
 ## Gotchas
 
 - Download runs in a raw `new Thread()` — no thread pool, no cancellation; long downloads tie up a JVM thread
