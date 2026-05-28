@@ -3,6 +3,7 @@ package org.jahia.modules.downloadhelper.graphql;
 import graphql.annotations.annotationTypes.*;
 import org.apache.commons.io.FilenameUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
+import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
 import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
 import org.jahia.osgi.BundleUtils;
@@ -48,7 +49,10 @@ public class DownloadHelperMutationExtension {
             try {
                 service.download(protocol, url, login, password, filename, email, currentUser);
             } catch (IOException e) {
-                LOGGER.error("Async download failed for url={} filename={} user={}", url, filename, currentUser, e);
+                LOGGER.error("Async download failed for url={} filename={} user={}",
+                        UrlSecurityUtils.sanitizeForLog(url),
+                        UrlSecurityUtils.sanitizeForLog(filename),
+                        UrlSecurityUtils.sanitizeForLog(currentUser), e);
             }
         }).start();
 
