@@ -3,8 +3,8 @@ package org.jahia.modules.downloadhelper.graphql;
 import graphql.annotations.annotationTypes.GraphQLDescription;
 import graphql.annotations.annotationTypes.GraphQLField;
 import graphql.annotations.annotationTypes.GraphQLName;
+import org.jahia.modules.downloadhelper.util.FileSizeUtils;
 
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -12,7 +12,6 @@ import java.util.Date;
 @GraphQLDescription("A file present in the download folder")
 public class GqlDownloadedFile {
 
-    private static final int KILO_CONSTANT = 1024;
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     private final String name;
@@ -36,14 +35,7 @@ public class GqlDownloadedFile {
     @GraphQLName("size")
     @GraphQLDescription("Human-readable file size")
     public String getSize() {
-        if (sizeBytes <= 0) {
-            return "0 B";
-        }
-
-        final String[] units = {"B", "KiB", "MiB", "GiB", "TiB"};
-        final int digitGroups = (int) (Math.log10(sizeBytes) / Math.log10(KILO_CONSTANT));
-        return new DecimalFormat("#,##0.#").format(sizeBytes / Math.pow(KILO_CONSTANT, digitGroups))
-                + " " + units[digitGroups];
+        return FileSizeUtils.format(sizeBytes);
     }
 
     @GraphQLField

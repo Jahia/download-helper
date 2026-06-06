@@ -5,6 +5,7 @@ import graphql.annotations.annotationTypes.GraphQLField;
 import graphql.annotations.annotationTypes.GraphQLName;
 import graphql.annotations.annotationTypes.GraphQLTypeExtension;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
+import org.jahia.modules.downloadhelper.util.FileSizeUtils;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
 import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
 import org.jahia.services.SpringContextSingleton;
@@ -17,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,8 +30,6 @@ import java.util.stream.Collectors;
 public class DownloadHelperQueryExtension {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DownloadHelperQueryExtension.class);
-    private static final String[] UNITS = {"B", "KiB", "MiB", "GiB", "TiB"};
-    private static final int KILO_CONSTANT = 1024;
 
     private DownloadHelperQueryExtension() {
     }
@@ -56,12 +54,7 @@ public class DownloadHelperQueryExtension {
                 final long spaceBytes = Files.getFileStore(
                         Paths.get(DownloadHelperService.DOWNLOAD_FOLDER_PATH)).getUsableSpace();
                 if (spaceBytes > 0) {
-                    final int digitGroups = Math.min(
-                            (int) (Math.log10(spaceBytes) / Math.log10(KILO_CONSTANT)),
-                            UNITS.length - 1);
-                    availableSpace = new DecimalFormat("#,##0.#")
-                            .format(spaceBytes / Math.pow(KILO_CONSTANT, digitGroups))
-                            + " " + UNITS[digitGroups];
+                    availableSpace = FileSizeUtils.format(spaceBytes);
                 }
             } catch (IOException e) {
                 LOGGER.warn("Could not determine available disk space", e);
