@@ -10,6 +10,7 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
 import org.jahia.modules.downloadhelper.constants.Email;
+import org.jahia.modules.downloadhelper.util.FileSizeUtils;
 import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
 import org.jahia.services.mail.MailService;
 import org.jahia.services.notification.HttpClientService;
@@ -33,7 +34,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -63,14 +63,7 @@ public class DownloadHelperService {
     private HttpClientService httpClientService;
 
     private static String formatSize(long bytes) {
-        if (bytes <= 0) {
-            return "0 B";
-        }
-
-        final String[] units = {"B", "KiB", "MiB", "GiB", "TiB"};
-        final int digitGroups = (int) (Math.log10(bytes) / Math.log10(KILO_CONSTANT));
-        return new DecimalFormat("#,##0.#").format(bytes / Math.pow(KILO_CONSTANT, digitGroups))
-                + " " + units[digitGroups];
+        return FileSizeUtils.format(bytes);
     }
 
     /**
@@ -156,8 +149,23 @@ public class DownloadHelperService {
 
     private boolean downloadHttps(String url, String login, String password, String filename,
             String ccEmail, String user, File targetFile) throws IOException {
+        // Reject scheme-prefixed input to avoid "https://https://..." confusion.
+        if (url.contains("://")) {
+            throw new IOException("URL must not contain a scheme prefix; provide host and path only");
+        }
         final String initialUrl = "https://" + url;
-        assertSafeHost(extractHost(initialUrl));
+        // Reject userinfo (e.g. "evil.com@internal-host") — it is never legitimate for a download URL
+        // and obfuscates which host the HTTP client will actually connect to.
+        final URI initialUri;
+        try {
+            initialUri = new URI(initialUrl);
+        } catch (URISyntaxException e) {
+            throw new IOException("Invalid URL: " + sanitizeForLog(url), e);
+        }
+        if (initialUri.getUserInfo() != null) {
+            throw new IOException("URL must not contain userinfo (user@host is not allowed)");
+        }
+        assertSafeHost(initialUri.getHost());
         sendEmail(url, filename, ccEmail, user, Email.DOWNLOAD_ASKED_SUBJECT);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Download of {} to {} asked by {}",
@@ -180,7 +188,7 @@ public class DownloadHelperService {
                         Base64.encodeBase64((login + ":" + password).getBytes(StandardCharsets.UTF_8)),
                         StandardCharsets.UTF_8));
             }
-            httpGet.addHeader(org.apache.http.HttpHeaders.USER_AGENT, "Jahia - Download Helper");
+            httpGet.addHeader("User-Agent", "Jahia - Download Helper");
 
             try (CloseableHttpResponse httpResponse = httpClient.execute(httpGet)) {
                 final int statusCode = httpResponse.getCode();
