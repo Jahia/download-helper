@@ -32,7 +32,7 @@ public class DownloadHelperMutationExtension {
     @GraphQLField
     @GraphQLName("downloadHelperTrigger")
     @GraphQLDescription("Triggers an asynchronous file download on the server")
-    @GraphQLRequiresPermission("adminSystemInfos")
+    @GraphQLRequiresPermission("adminDownloadHelper")
     public static Boolean triggerDownload(
             @GraphQLName("protocol") @GraphQLNonNull final String protocol,
             @GraphQLName("url") @GraphQLNonNull final String url,
@@ -71,7 +71,7 @@ public class DownloadHelperMutationExtension {
     @GraphQLField
     @GraphQLName("downloadHelperDeleteFile")
     @GraphQLDescription("Deletes a file from the download folder")
-    @GraphQLRequiresPermission("adminSystemInfos")
+    @GraphQLRequiresPermission("adminDownloadHelper")
     public static Boolean deleteFile(
             @GraphQLName("filename") @GraphQLNonNull final String filename) {
 

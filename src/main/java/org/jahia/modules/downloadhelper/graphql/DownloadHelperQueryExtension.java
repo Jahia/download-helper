@@ -37,7 +37,7 @@ public class DownloadHelperQueryExtension {
     @GraphQLField
     @GraphQLName("downloadHelperInfo")
     @GraphQLDescription("Returns server information for the download helper admin panel")
-    @GraphQLRequiresPermission("adminSystemInfos")
+    @GraphQLRequiresPermission("adminDownloadHelper")
     public static GqlServerInfo getDownloadHelperInfo() {
         final boolean isProcessingServer = SettingsBean.getInstance().isProcessingServer();
         final File downloadFolder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
@@ -71,7 +71,7 @@ public class DownloadHelperQueryExtension {
     @GraphQLField
     @GraphQLName("downloadHelperFiles")
     @GraphQLDescription("Lists files present in the download folder, sorted by last modified date descending")
-    @GraphQLRequiresPermission("adminSystemInfos")
+    @GraphQLRequiresPermission("adminDownloadHelper")
     public static List<GqlDownloadedFile> getDownloadHelperFiles() {
         final File folder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
         if (!folder.exists() || !folder.isDirectory()) {
