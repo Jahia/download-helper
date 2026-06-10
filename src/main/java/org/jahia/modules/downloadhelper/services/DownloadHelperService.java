@@ -1,6 +1,5 @@
 package org.jahia.modules.downloadhelper.services;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.net.util.Base64;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.config.RequestConfig;
@@ -10,6 +9,7 @@ import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
 import org.jahia.modules.downloadhelper.constants.Email;
+import org.jahia.modules.downloadhelper.util.DownloadPaths;
 import org.jahia.modules.downloadhelper.util.FileSizeUtils;
 import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
 import org.jahia.services.mail.MailService;
@@ -119,7 +119,17 @@ public class DownloadHelperService {
             return;
         }
 
-        final File targetFile = new File(DOWNLOAD_FOLDER_PATH, FilenameUtils.getName(filename));
+        final File targetFile;
+        try {
+            targetFile = DownloadPaths.resolveContainedFile(DOWNLOAD_FOLDER_PATH, filename);
+        } catch (IOException ex) {
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.error("Rejected unsafe filename for download asked by {}: {}",
+                        sanitizeForLog(user), sanitizeForLog(filename));
+            }
+            sendEmail(url, filename, ccEmail, user, Email.DOWNLOAD_FAILED_SUBJECT);
+            return;
+        }
         boolean result = false;
         try {
             if ("https".equals(protocol)) {
