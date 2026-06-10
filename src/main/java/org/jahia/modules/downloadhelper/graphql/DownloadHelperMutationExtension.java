@@ -1,8 +1,8 @@
 package org.jahia.modules.downloadhelper.graphql;
 
 import graphql.annotations.annotationTypes.*;
-import org.apache.commons.io.FilenameUtils;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
+import org.jahia.modules.downloadhelper.util.DownloadPaths;
 import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
 import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
@@ -25,6 +25,10 @@ public class DownloadHelperMutationExtension {
     private DownloadHelperMutationExtension() {
     }
 
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
     @GraphQLField
     @GraphQLName("downloadHelperTrigger")
     @GraphQLDescription("Triggers an asynchronous file download on the server")
@@ -36,6 +40,11 @@ public class DownloadHelperMutationExtension {
             @GraphQLName("login") final String login,
             @GraphQLName("password") final String password,
             @GraphQLName("email") final String email) {
+
+        if (isBlank(protocol) || isBlank(url) || isBlank(filename)) {
+            LOGGER.warn("Rejected download trigger with blank protocol/url/filename");
+            return Boolean.FALSE;
+        }
 
         final DownloadHelperService service = BundleUtils.getOsgiService(DownloadHelperService.class, null);
         if (service == null) {
@@ -66,22 +75,11 @@ public class DownloadHelperMutationExtension {
     public static Boolean deleteFile(
             @GraphQLName("filename") @GraphQLNonNull final String filename) {
 
-        final String safeName = FilenameUtils.getName(filename);
-        if (safeName.isEmpty()) {
-            LOGGER.warn("Rejected empty or path-only filename: {}", filename);
-            return Boolean.FALSE;
-        }
-
-        final File file = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH, safeName);
+        final File file;
         try {
-            final String canonicalFile = file.getCanonicalPath();
-            final String canonicalFolder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH).getCanonicalPath();
-            if (!canonicalFile.startsWith(canonicalFolder + File.separator)) {
-                LOGGER.warn("Path traversal attempt rejected for filename: {}", filename);
-                return Boolean.FALSE;
-            }
+            file = DownloadPaths.resolveContainedFile(DownloadHelperService.DOWNLOAD_FOLDER_PATH, filename);
         } catch (IOException e) {
-            LOGGER.error("Could not resolve canonical path for filename: {}", filename, e);
+            LOGGER.warn("Rejected unsafe filename for delete: {}", UrlSecurityUtils.sanitizeForLog(filename));
             return Boolean.FALSE;
         }
 
