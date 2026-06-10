@@ -5,7 +5,7 @@ import React from 'react';
 export default () => {
     registry.add('adminRoute', 'downloadHelper', {
         targets: ['administration-server-systemHealth:10'],
-        requiredPermission: 'adminSystemInfos',
+        requiredPermission: 'adminDownloadHelper',
         label: 'download-helper:label.menu_entry',
         isSelectable: true,
         render: () => React.createElement(DownloadHelperAdmin)
