@@ -24,6 +24,10 @@
     <jahia-module-type>system</jahia-module-type>
 <jahia-deploy-on-site>system</jahia-deploy-on-site>
     <jahia-depends>serverSettings,graphql-dxm-provider,default</jahia-depends>
+    <sonar.projectKey>org.jahia.community:download-helper</sonar.projectKey>
+    <sonar.sources>pom.xml,src/javascript,src/main</sonar.sources>
+    <sonar.tests>src/test</sonar.tests>
+    <sonar.exclusions>src/main/resources/javascript/apps/**,**/*.test.jsx,**/*.test.js,src/javascript/index.js,src/main/resources/resources/**</sonar.exclusions>
   </properties>
   <dependencies>
     <dependency>
@@ -60,6 +64,12 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>3.27.7</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.12.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

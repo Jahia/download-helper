@@ -24,3 +24,7 @@ src/main/resources/javascript/apps
 .env
 **/install-state.gz
 .codegraph
+
+# Jest coverage
+coverage
+*.swp

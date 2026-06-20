@@ -1,0 +1,61 @@
+{
+  "label": {
+    "menu_entry": "Assistant de téléchargement",
+    "protocol": "Protocole",
+    "url": "URL",
+    "filename": "Nom du fichier",
+    "login": "Identifiant (facultatif)",
+    "password": "Mot de passe (uniquement si identifiant)",
+    "email": "E-mail",
+    "trigger": "Démarrer le téléchargement",
+    "triggering": "Démarrage…",
+    "loading": "Chargement…",
+    "delete": "Supprimer",
+    "deleting": "Suppression…",
+    "refresh": "Actualiser",
+    "actions": "Actions",
+    "filesStatus": "État des fichiers téléchargés"
+  },
+  "files": {
+    "title": "Fichiers téléchargés",
+    "empty": "Aucun fichier dans le dossier de téléchargement.",
+    "name": "Nom",
+    "size": "Taille",
+    "lastModified": "Dernière modification"
+  },
+  "downloadHelper": {
+    "settings": "Assistant de téléchargement",
+    "info": "Disponible : {{availableSpace}} dans {{downloadFolderPath}}",
+    "notProcessingServer": "Ce module ne peut être utilisé que sur le serveur de traitement.",
+    "protocolHint": "Le protocole est détecté automatiquement lorsque vous collez une URL complète.",
+    "deleteDialog": {
+      "title": "Supprimer le fichier",
+      "body": "Supprimer « {{name}} » ? Cette action est irréversible.",
+      "confirm": "Supprimer",
+      "cancel": "Annuler"
+    },
+    "success": {
+      "started": "Téléchargement démarré."
+    },
+    "errors": {
+      "trigger": {
+        "failed": "Échec du démarrage du téléchargement."
+      },
+      "load": {
+        "failed": "Échec du chargement des informations du serveur."
+      },
+      "files": {
+        "failed": "Échec du chargement de la liste des fichiers téléchargés."
+      },
+      "mail": {
+        "disabled": "Le service de messagerie n'est pas activé. Aucune notification par e-mail ne sera envoyée."
+      },
+      "url": {
+        "required": "L'URL est requise."
+      },
+      "filename": {
+        "required": "Le nom du fichier est requis."
+      }
+    }
+  }
+}

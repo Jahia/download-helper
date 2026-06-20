@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import PropTypes from 'prop-types';
 import {useMutation, useQuery} from '@apollo/client';
 import {useTranslation} from 'react-i18next';
 import {Button, Delete, Field, Input, Tooltip, Typography} from '@jahia/moonstone';
@@ -9,48 +10,389 @@ import {
     GET_DOWNLOAD_HELPER_INFO,
     TRIGGER_DOWNLOAD
 } from './DownloadHelper.gql';
+import {PROTOCOL_PREFIXES, extractProtocol, stripProtocol, extractFilename} from './formHelpers';
 
-const PROTOCOL_PREFIXES = ['https://', 'ftp://'];
+const FileRow = ({file, isDeleting, actionLabel, onDelete}) => (
+    <tr className={styles.downloadHelper_file_row}>
+        <td className={styles.downloadHelper_file_name}>{file.name}</td>
+        <td className={styles.downloadHelper_file_meta}>{file.size}</td>
+        <td className={styles.downloadHelper_file_meta}>{file.lastModified}</td>
+        <td className={styles.downloadHelper_file_actions}>
+            <Tooltip label={actionLabel}>
+                <button
+                    type="button"
+                    className={styles.downloadHelper_icon_btn}
+                    aria-label={actionLabel}
+                    disabled={isDeleting}
+                    onClick={event => onDelete(file.name, event.currentTarget)}
+                >
+                    <Delete aria-hidden="true" focusable="false"/>
+                </button>
+            </Tooltip>
+        </td>
+    </tr>
+);
 
-const extractProtocol = url => {
-    if (url.startsWith('ftp://')) {
-        return 'ftp';
-    }
-
-    return 'https';
+FileRow.propTypes = {
+    file: PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        size: PropTypes.node,
+        lastModified: PropTypes.node
+    }).isRequired,
+    isDeleting: PropTypes.bool,
+    actionLabel: PropTypes.string.isRequired,
+    onDelete: PropTypes.func.isRequired
 };
 
-const stripProtocol = url => {
-    for (const prefix of PROTOCOL_PREFIXES) {
-        if (url.startsWith(prefix)) {
-            return url.slice(prefix.length);
-        }
-    }
+// Persistent live regions + visible alerts for trigger success/error.
+const StatusAlerts = ({t, triggerStatus, visibleAlertRef}) => (
+    <>
+        {/* Persistent live regions — always present so AT registers them before content appears */}
+        <output
+            aria-atomic="true"
+            aria-live="polite"
+            className={styles.downloadHelper_sr_only}
+        >
+            {triggerStatus === 'success' ? t('downloadHelper.success.started') : ''}
+        </output>
+        <div
+            aria-atomic="true"
+            aria-live="assertive"
+            className={styles.downloadHelper_sr_only}
+            role="alert"
+        >
+            {triggerStatus === 'error' ? t('downloadHelper.errors.trigger.failed') : ''}
+        </div>
 
-    return url;
+        {triggerStatus === 'success' && (
+            <div ref={visibleAlertRef} tabIndex={-1} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--success']}`}>
+                {t('downloadHelper.success.started')}
+            </div>
+        )}
+
+        {triggerStatus === 'error' && (
+            <div ref={visibleAlertRef} tabIndex={-1} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--error']}`}>
+                {t('downloadHelper.errors.trigger.failed')}
+            </div>
+        )}
+    </>
+);
+
+StatusAlerts.propTypes = {
+    t: PropTypes.func.isRequired,
+    triggerStatus: PropTypes.oneOf(['success', 'error']),
+    visibleAlertRef: PropTypes.shape({current: PropTypes.any}).isRequired
 };
 
-const extractFilename = url => {
-    if (!url) {
-        return '';
-    }
+// A required text field with an inline, screen-reader-linked validation error.
+const ValidatedField = ({t, id, errorId, label, placeholder, value, hasError, errorKey, onChange}) => (
+    <Field id={id} label={label}>
+        <Input
+            required
+            id={id}
+            value={value}
+            aria-required="true"
+            aria-invalid={hasError ? 'true' : undefined}
+            aria-describedby={hasError ? errorId : undefined}
+            placeholder={placeholder}
+            onChange={onChange}
+        />
+        <span
+            id={errorId}
+            className={styles.downloadHelper_fieldError}
+            hidden={!hasError}
+        >
+            {hasError ? t(errorKey) : ''}
+        </span>
+    </Field>
+);
 
-    try {
-        const parsed = new URL(url.includes('://') ? url : 'https://' + url);
-        const segments = parsed.pathname.split('/').filter(Boolean);
-        return segments[segments.length - 1] || '';
-    } catch {
-        const segments = url.split('/').filter(Boolean);
-        return (segments[segments.length - 1] || '').split('?')[0];
-    }
+ValidatedField.propTypes = {
+    t: PropTypes.func.isRequired,
+    id: PropTypes.string.isRequired,
+    errorId: PropTypes.string.isRequired,
+    label: PropTypes.node.isRequired,
+    placeholder: PropTypes.string,
+    value: PropTypes.string.isRequired,
+    hasError: PropTypes.bool.isRequired,
+    errorKey: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired
 };
 
-export function DownloadHelperAdmin() {
+const DownloadForm = ({t, info, formState, isSubmitted, isTriggering, onSubmit, onProtocolChange, onUrlChange, onFilenameChange, onLoginChange, onPasswordChange, onEmailChange}) => {
+    const {protocol, url, filename, login, password, email} = formState;
+    return (
+        <form
+            noValidate
+            className={styles.downloadHelper_form}
+            onSubmit={onSubmit}
+        >
+            <Field id="dh-protocol" label={t('label.protocol')}>
+                <select
+                    id="dh-protocol"
+                    className={styles.downloadHelper_select}
+                    value={protocol}
+                    aria-describedby="dh-protocol-hint"
+                    onChange={onProtocolChange}
+                >
+                    <option value="https">https://</option>
+                    <option value="ftp">ftp://</option>
+                </select>
+                <span id="dh-protocol-hint" className={styles.downloadHelper_hint}>{t('downloadHelper.protocolHint')}</span>
+            </Field>
+
+            <ValidatedField
+                t={t}
+                id="dh-url"
+                errorId="dh-url-error"
+                label={t('label.url')}
+                placeholder="example.com/path/to/file"
+                value={url}
+                hasError={isSubmitted && !url}
+                errorKey="downloadHelper.errors.url.required"
+                onChange={onUrlChange}
+            />
+
+            <ValidatedField
+                t={t}
+                id="dh-filename"
+                errorId="dh-filename-error"
+                label={t('label.filename')}
+                placeholder="file.zip"
+                value={filename}
+                hasError={isSubmitted && !filename}
+                errorKey="downloadHelper.errors.filename.required"
+                onChange={onFilenameChange}
+            />
+
+            <Field id="dh-login" label={t('label.login')}>
+                <Input
+                    id="dh-login"
+                    value={login}
+                    autoComplete="username"
+                    onChange={onLoginChange}
+                />
+            </Field>
+
+            <Field id="dh-password" label={t('label.password')}>
+                <Input
+                    id="dh-password"
+                    type="password"
+                    value={password}
+                    autoComplete="current-password"
+                    onChange={onPasswordChange}
+                />
+            </Field>
+
+            <Field
+                id="dh-email"
+                label={t('label.email')}
+            >
+                <Input
+                    id="dh-email"
+                    value={email}
+                    isDisabled={!info.isMailActivated}
+                    autoComplete="email"
+                    aria-describedby={info.isMailActivated ? undefined : 'dh-email-hint'}
+                    placeholder="admin@example.com"
+                    onChange={onEmailChange}
+                />
+            </Field>
+
+            {!info.isMailActivated && (
+                <span id="dh-email-hint" className={styles.downloadHelper_sr_only}>
+                    {t('downloadHelper.errors.mail.disabled')}
+                </span>
+            )}
+
+            <div className={styles.downloadHelper_actions}>
+                <Button
+                    type="submit"
+                    label={isTriggering ? t('label.triggering') : t('label.trigger')}
+                    variant="primary"
+                    isDisabled={isTriggering || !url || !filename}
+                />
+            </div>
+        </form>
+    );
+};
+
+DownloadForm.propTypes = {
+    t: PropTypes.func.isRequired,
+    info: PropTypes.shape({isMailActivated: PropTypes.bool}).isRequired,
+    formState: PropTypes.shape({
+        protocol: PropTypes.string.isRequired,
+        url: PropTypes.string.isRequired,
+        filename: PropTypes.string.isRequired,
+        login: PropTypes.string.isRequired,
+        password: PropTypes.string.isRequired,
+        email: PropTypes.string.isRequired
+    }).isRequired,
+    isSubmitted: PropTypes.bool.isRequired,
+    isTriggering: PropTypes.bool.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    onProtocolChange: PropTypes.func.isRequired,
+    onUrlChange: PropTypes.func.isRequired,
+    onFilenameChange: PropTypes.func.isRequired,
+    onLoginChange: PropTypes.func.isRequired,
+    onPasswordChange: PropTypes.func.isRequired,
+    onEmailChange: PropTypes.func.isRequired
+};
+
+const FilesTable = ({t, files, deletingName, onDelete}) => (
+    <table
+        aria-labelledby="dh-files-heading"
+        className={styles.downloadHelper_files_table}
+    >
+        <thead className={styles.downloadHelper_files_thead}>
+            <tr>
+                <th scope="col">{t('files.name')}</th>
+                <th scope="col">{t('files.size')}</th>
+                <th scope="col">{t('files.lastModified')}</th>
+                <th scope="col">
+                    <span className={styles.downloadHelper_sr_only}>{t('label.actions')}</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {files.map(file => {
+                const isDeleting = deletingName === file.name;
+                const actionLabel = isDeleting ?
+                    `${t('label.deleting')} ${file.name}` :
+                    `${t('label.delete')} ${file.name}`;
+                return (
+                    <FileRow
+                        key={file.name}
+                        file={file}
+                        isDeleting={isDeleting}
+                        actionLabel={actionLabel}
+                        onDelete={onDelete}
+                    />
+                );
+            })}
+        </tbody>
+    </table>
+);
+
+FilesTable.propTypes = {
+    t: PropTypes.func.isRequired,
+    files: PropTypes.arrayOf(PropTypes.shape({name: PropTypes.string.isRequired})).isRequired,
+    deletingName: PropTypes.string,
+    onDelete: PropTypes.func.isRequired
+};
+
+const FilesSection = ({t, refreshAreaRef, isFilesLoading, filesError, hasFiles, isEmpty, files, deletingName, onRefresh, onDelete}) => (
+    <div ref={refreshAreaRef} className={styles.downloadHelper_section}>
+        <div className={styles.downloadHelper_section_header}>
+            <h3 id="dh-files-heading" className={styles.downloadHelper_section_title}>
+                {t('files.title')}
+            </h3>
+            <Button
+                type="button"
+                label={t('label.refresh')}
+                variant="ghost"
+                size="small"
+                onClick={onRefresh}
+            />
+        </div>
+
+        <output
+            aria-atomic="true"
+            aria-label={t('label.filesStatus')}
+            aria-live="polite"
+            className={isFilesLoading ? styles.downloadHelper_loading : undefined}
+        >
+            {isFilesLoading ? t('label.loading') : ''}
+        </output>
+
+        {filesError && (
+            <div role="alert" className={styles.downloadHelper_error}>
+                {t('downloadHelper.errors.files.failed')}
+            </div>
+        )}
+
+        {hasFiles && (
+            <FilesTable
+                t={t}
+                files={files}
+                deletingName={deletingName}
+                onDelete={onDelete}
+            />
+        )}
+
+        {isEmpty && (
+            <div className={styles.downloadHelper_files_empty}>{t('files.empty')}</div>
+        )}
+    </div>
+);
+
+FilesSection.propTypes = {
+    t: PropTypes.func.isRequired,
+    refreshAreaRef: PropTypes.shape({current: PropTypes.any}).isRequired,
+    isFilesLoading: PropTypes.bool,
+    filesError: PropTypes.object,
+    hasFiles: PropTypes.bool,
+    isEmpty: PropTypes.bool,
+    files: PropTypes.arrayOf(PropTypes.shape({name: PropTypes.string.isRequired})),
+    deletingName: PropTypes.string,
+    onRefresh: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired
+};
+
+const DeleteConfirmDialog = ({t, dialogRef, pendingName, isDeleting, onConfirm, onCancel, onClose}) => (
+    <dialog
+        ref={dialogRef}
+        role="alertdialog"
+        aria-labelledby="dh-delete-dialog-title"
+        aria-describedby="dh-delete-dialog-desc"
+        className={styles.downloadHelper_dialog}
+        onClose={onClose}
+    >
+        <h2 id="dh-delete-dialog-title">{t('downloadHelper.deleteDialog.title')}</h2>
+        <p id="dh-delete-dialog-desc">{t('downloadHelper.deleteDialog.body', {name: pendingName})}</p>
+        <div className={styles.downloadHelper_dialogActions}>
+            <Button
+                type="button"
+                label={t('downloadHelper.deleteDialog.cancel')}
+                isDisabled={isDeleting}
+                onClick={onCancel}
+            />
+            <Button
+                type="button"
+                label={t('downloadHelper.deleteDialog.confirm')}
+                variant="danger"
+                isDisabled={isDeleting}
+                onClick={onConfirm}
+            />
+        </div>
+    </dialog>
+);
+
+DeleteConfirmDialog.propTypes = {
+    t: PropTypes.func.isRequired,
+    dialogRef: PropTypes.shape({current: PropTypes.any}).isRequired,
+    pendingName: PropTypes.string,
+    isDeleting: PropTypes.bool,
+    onConfirm: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired
+};
+
+const NotProcessingServer = ({t}) => (
+    <section aria-labelledby="dh-page-heading" className={styles.downloadHelper_container}>
+        <div className={styles.downloadHelper_page_header}>
+            <h2 id="dh-page-heading">{t('downloadHelper.settings')}</h2>
+        </div>
+        <Typography>{t('downloadHelper.notProcessingServer')}</Typography>
+    </section>
+);
+
+NotProcessingServer.propTypes = {
+    t: PropTypes.func.isRequired
+};
+
+export const DownloadHelperAdmin = () => {
     const {t} = useTranslation('download-helper');
-
-    useEffect(() => {
-        document.title = t('downloadHelper.settings');
-    }, [t]);
 
     const [protocol, setProtocol] = useState('https');
     const [url, setUrl] = useState('');
@@ -59,26 +401,75 @@ export function DownloadHelperAdmin() {
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [triggerStatus, setTriggerStatus] = useState(null);
+    // Bumped on every resolved trigger so the focus effect re-fires even on two identical outcomes.
+    const [statusSeq, setStatusSeq] = useState(0);
     const [submitted, setSubmitted] = useState(false);
+    const [deletingName, setDeletingName] = useState(null);
+    const [pendingDeleteName, setPendingDeleteName] = useState(null);
+    const [isConfirming, setIsConfirming] = useState(false);
     const filenameManuallySet = useRef(false);
     const visibleAlertRef = useRef(null);
     const refreshAreaRef = useRef(null);
+    const deleteDialogRef = useRef(null);
+    const deleteTriggerRef = useRef(null);
+
+    // Restore the previous document title on unmount so navigating away does not leave it stale.
+    useEffect(() => {
+        const previousTitle = document.title;
+        document.title = t('downloadHelper.settings');
+        return () => {
+            document.title = previousTitle;
+        };
+    }, [t]);
+
+    // Move focus to the freshly committed status/error alert (no magic-number setTimeout, no leak).
+    useEffect(() => {
+        if (triggerStatus) {
+            visibleAlertRef.current?.focus();
+        }
+    }, [triggerStatus, statusSeq]);
+
+    // Open the confirmation dialog whenever a file is staged for deletion.
+    useEffect(() => {
+        if (pendingDeleteName !== null) {
+            deleteDialogRef.current?.showModal();
+        }
+    }, [pendingDeleteName]);
 
     const {data, loading, error} = useQuery(GET_DOWNLOAD_HELPER_INFO, {fetchPolicy: 'network-only'});
 
-    const {data: filesData, loading: filesLoading, refetch: refetchFiles} = useQuery(
-        GET_DOWNLOAD_HELPER_FILES, {fetchPolicy: 'network-only'}
-    );
+    const {
+        data: filesData,
+        loading: filesLoading,
+        error: filesError,
+        refetch: refetchFiles
+    } = useQuery(GET_DOWNLOAD_HELPER_FILES, {fetchPolicy: 'network-only'});
 
     const [triggerDownload, {loading: triggering}] = useMutation(TRIGGER_DOWNLOAD);
 
-    const [deleteFile, {loading: deleting}] = useMutation(DELETE_DOWNLOADED_FILE, {
+    const [deleteFile] = useMutation(DELETE_DOWNLOADED_FILE, {
         refetchQueries: [{query: GET_DOWNLOAD_HELPER_FILES}],
         onCompleted: () => {
+            setDeletingName(null);
+            setIsConfirming(false);
             const firstFocusable = refreshAreaRef.current?.querySelector('button:not(:disabled)');
             firstFocusable?.focus();
+        },
+        onError: () => {
+            setDeletingName(null);
+            setIsConfirming(false);
         }
     });
+
+    const resetForm = () => {
+        setUrl('');
+        setFilename('');
+        setLogin('');
+        setPassword('');
+        setEmail('');
+        setSubmitted(false);
+        filenameManuallySet.current = false;
+    };
 
     const handleSubmit = async () => {
         setSubmitted(true);
@@ -98,24 +489,78 @@ export function DownloadHelperAdmin() {
                     email: email || null
                 }
             });
-            if (result.data && result.data.downloadHelperTrigger) {
+            if (result.data?.downloadHelperTrigger === true) {
                 setTriggerStatus('success');
+                resetForm();
             } else {
                 setTriggerStatus('error');
             }
-        } catch (err) {
-            console.error('Failed to trigger download:', err);
+        } catch {
             setTriggerStatus('error');
         }
 
-        setTimeout(() => visibleAlertRef.current?.focus(), 50);
+        setStatusSeq(seq => seq + 1);
+    };
+
+    const handleFormSubmit = e => {
+        e.preventDefault();
+        handleSubmit();
+    };
+
+    const handleUrlChange = e => {
+        const raw = e.target.value;
+        const hasPrefix = PROTOCOL_PREFIXES.some(p => raw.startsWith(p));
+        const newUrl = hasPrefix ? stripProtocol(raw) : raw;
+        if (hasPrefix) {
+            setProtocol(extractProtocol(raw));
+        }
+
+        setUrl(newUrl);
+        if (!filenameManuallySet.current) {
+            setFilename(extractFilename(newUrl));
+        }
+    };
+
+    const handleFilenameChange = e => {
+        filenameManuallySet.current = true;
+        setFilename(e.target.value);
+    };
+
+    // Stage the file for deletion and remember the triggering button for focus return.
+    const handleDelete = (name, triggerEl) => {
+        deleteTriggerRef.current = triggerEl ?? null;
+        setPendingDeleteName(name);
+    };
+
+    const handleDeleteConfirm = () => {
+        const name = pendingDeleteName;
+        setIsConfirming(true);
+        deleteDialogRef.current?.close();
+        if (!name) {
+            setIsConfirming(false);
+            return;
+        }
+
+        setDeletingName(name);
+        deleteFile({variables: {filename: name}});
+    };
+
+    const handleDeleteCancel = () => {
+        deleteDialogRef.current?.close();
+    };
+
+    // Reset staged state and return focus to the delete button that opened the dialog.
+    const handleDeleteDialogClose = () => {
+        setPendingDeleteName(null);
+        deleteTriggerRef.current?.focus();
+        deleteTriggerRef.current = null;
     };
 
     if (loading) {
         return (
-            <div role="status" aria-live="polite" className={styles.downloadHelper_loading}>
+            <output aria-live="polite" className={styles.downloadHelper_loading}>
                 {t('label.loading')}
-            </div>
+            </output>
         );
     }
 
@@ -127,23 +572,20 @@ export function DownloadHelperAdmin() {
         );
     }
 
-    const info = data && data.downloadHelperInfo;
+    const info = data?.downloadHelperInfo;
 
     if (!info || !info.isProcessingServer) {
-        return (
-            <div className={styles.downloadHelper_container}>
-                <div className={styles.downloadHelper_page_header}>
-                    <h2>{t('downloadHelper.settings')}</h2>
-                </div>
-                <Typography>{t('downloadHelper.notProcessingServer')}</Typography>
-            </div>
-        );
+        return <NotProcessingServer t={t}/>;
     }
 
+    const files = filesData?.downloadHelperFiles;
+    const hasFiles = !filesLoading && files && files.length > 0;
+    const showEmpty = !filesLoading && !filesError && (!files || files.length === 0);
+
     return (
-        <div className={styles.downloadHelper_container}>
+        <section aria-labelledby="dh-page-heading" className={styles.downloadHelper_container}>
             <div className={styles.downloadHelper_page_header}>
-                <h2>{t('downloadHelper.settings')}</h2>
+                <h2 id="dh-page-heading">{t('downloadHelper.settings')}</h2>
             </div>
 
             <div className={styles.downloadHelper_info}>
@@ -156,225 +598,52 @@ export function DownloadHelperAdmin() {
             </div>
 
             {!info.isMailActivated && (
-                <div role="region" aria-label={t('downloadHelper.errors.mail.disabled')} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--warning']}`}>
+                <div role="alert" className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--warning']}`}>
                     {t('downloadHelper.errors.mail.disabled')}
                 </div>
             )}
 
-            {/* Persistent live regions — always present so AT registers them before content appears */}
-            <div
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
-                className={styles.downloadHelper_sr_only}
-            >
-                {triggerStatus === 'success' ? t('downloadHelper.success.started') : ''}
-            </div>
-            <div
-                role="alert"
-                aria-live="assertive"
-                aria-atomic="true"
-                className={styles.downloadHelper_sr_only}
-            >
-                {triggerStatus === 'error' ? t('downloadHelper.errors.trigger.failed') : ''}
-            </div>
+            <StatusAlerts t={t} triggerStatus={triggerStatus} visibleAlertRef={visibleAlertRef}/>
 
-            {triggerStatus === 'success' && (
-                <div ref={visibleAlertRef} tabIndex={-1} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--success']}`}>
-                    {t('downloadHelper.success.started')}
-                </div>
-            )}
+            <DownloadForm
+                t={t}
+                info={info}
+                formState={{protocol, url, filename, login, password, email}}
+                isSubmitted={submitted}
+                isTriggering={triggering}
+                onSubmit={handleFormSubmit}
+                onProtocolChange={e => setProtocol(e.target.value)}
+                onUrlChange={handleUrlChange}
+                onFilenameChange={handleFilenameChange}
+                onLoginChange={e => setLogin(e.target.value)}
+                onPasswordChange={e => setPassword(e.target.value)}
+                onEmailChange={e => setEmail(e.target.value)}
+            />
 
-            {triggerStatus === 'error' && (
-                <div ref={visibleAlertRef} tabIndex={-1} className={`${styles.downloadHelper_alert} ${styles['downloadHelper_alert--error']}`}>
-                    {t('downloadHelper.errors.trigger.failed')}
-                </div>
-            )}
+            <FilesSection
+                t={t}
+                refreshAreaRef={refreshAreaRef}
+                isFilesLoading={filesLoading}
+                filesError={filesError}
+                hasFiles={hasFiles}
+                isEmpty={showEmpty}
+                files={files}
+                deletingName={deletingName}
+                onRefresh={() => refetchFiles()}
+                onDelete={handleDelete}
+            />
 
-            <form
-                className={styles.downloadHelper_form}
-                onSubmit={e => {
-                    e.preventDefault();
-                    handleSubmit();
-                }}
-                noValidate
-            >
-                <Field label={t('label.protocol')} id="dh-protocol">
-                    <select
-                        id="dh-protocol"
-                        className={styles.downloadHelper_select}
-                        value={protocol}
-                        aria-label={t('label.protocol')}
-                        onChange={e => setProtocol(e.target.value)}
-                    >
-                        <option value="https">https://</option>
-                        <option value="ftp">ftp://</option>
-                    </select>
-                </Field>
-
-                <Field label={t('label.url')} id="dh-url">
-                    <Input
-                        id="dh-url"
-                        value={url}
-                        required
-                        aria-required="true"
-                        aria-invalid={submitted && !url ? 'true' : undefined}
-                        aria-describedby={submitted && !url ? 'dh-url-error' : undefined}
-                        onChange={e => {
-                            const raw = e.target.value;
-                            const hasPrefix = PROTOCOL_PREFIXES.some(p => raw.startsWith(p));
-                            const newUrl = hasPrefix ? stripProtocol(raw) : raw;
-                            if (hasPrefix) {
-                                setProtocol(extractProtocol(raw));
-                            }
-
-                            setUrl(newUrl);
-                            if (!filenameManuallySet.current) {
-                                setFilename(extractFilename(newUrl));
-                            }
-                        }}
-                        placeholder="example.com/path/to/file"
-                    />
-                    {submitted && !url && (
-                        <span id="dh-url-error" className={styles.downloadHelper_fieldError} role="alert">{t('downloadHelper.errors.url.required')}</span>
-                    )}
-                </Field>
-
-                <Field label={t('label.filename')} id="dh-filename">
-                    <Input
-                        id="dh-filename"
-                        value={filename}
-                        required
-                        aria-required="true"
-                        aria-invalid={submitted && !filename ? 'true' : undefined}
-                        aria-describedby={submitted && !filename ? 'dh-filename-error' : undefined}
-                        onChange={e => {
-                            filenameManuallySet.current = true;
-                            setFilename(e.target.value);
-                        }}
-                        placeholder="file.zip"
-                    />
-                    {submitted && !filename && (
-                        <span id="dh-filename-error" className={styles.downloadHelper_fieldError} role="alert">{t('downloadHelper.errors.filename.required')}</span>
-                    )}
-                </Field>
-
-                <Field label={t('label.login')} id="dh-login">
-                    <Input
-                        id="dh-login"
-                        value={login}
-                        autoComplete="username"
-                        aria-label={t('label.login')}
-                        onChange={e => setLogin(e.target.value)}
-                    />
-                </Field>
-
-                <Field label={t('label.password')} id="dh-password">
-                    <Input
-                        id="dh-password"
-                        type="password"
-                        value={password}
-                        autoComplete="current-password"
-                        aria-label={t('label.password')}
-                        onChange={e => setPassword(e.target.value)}
-                    />
-                </Field>
-
-                <Field
-                    label={t('label.email')}
-                    id="dh-email"
-                    hint={!info.isMailActivated ? t('downloadHelper.errors.mail.disabled') : undefined}
-                >
-                    <Input
-                        id="dh-email"
-                        value={email}
-                        autoComplete="email"
-                        aria-label={t('label.email')}
-                        aria-describedby={!info.isMailActivated ? 'dh-email-hint' : undefined}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="admin@example.com"
-                        isDisabled={!info.isMailActivated}
-                    />
-                </Field>
-
-                {!info.isMailActivated && (
-                    <span id="dh-email-hint" className={styles.downloadHelper_sr_only}>
-                        {t('downloadHelper.errors.mail.disabled')}
-                    </span>
-                )}
-
-                <div className={styles.downloadHelper_actions}>
-                    <Button
-                        type="submit"
-                        label={triggering ? t('label.triggering') : t('label.trigger')}
-                        variant="primary"
-                        isDisabled={triggering || !url || !filename}
-                    />
-                </div>
-            </form>
-
-            <div ref={refreshAreaRef} className={styles.downloadHelper_section}>
-                <div className={styles.downloadHelper_section_header}>
-                    <h3 id="dh-files-heading" className={styles.downloadHelper_section_title}>
-                        {t('files.title')}
-                    </h3>
-                    <Button
-                        type="button"
-                        label={t('label.refresh')}
-                        variant="ghost"
-                        size="small"
-                        onClick={() => refetchFiles()}
-                    />
-                </div>
-
-                <div role="status" aria-live="polite" className={styles.downloadHelper_loading}>
-                    {filesLoading ? t('label.loading') : ''}
-                </div>
-
-                {!filesLoading && filesData && filesData.downloadHelperFiles && filesData.downloadHelperFiles.length > 0 ? (
-                    <table
-                        className={styles.downloadHelper_files_table}
-                        aria-labelledby="dh-files-heading"
-                    >
-                        <thead className={styles.downloadHelper_files_thead}>
-                            <tr>
-                                <th scope="col">{t('files.name')}</th>
-                                <th scope="col">{t('files.size')}</th>
-                                <th scope="col">{t('files.lastModified')}</th>
-                                <th scope="col">
-                                    <span className={styles.downloadHelper_sr_only}>{t('label.actions')}</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filesData.downloadHelperFiles.map(file => (
-                                <tr key={file.name} className={styles.downloadHelper_file_row}>
-                                    <td className={styles.downloadHelper_file_name}>{file.name}</td>
-                                    <td className={styles.downloadHelper_file_meta}>{file.size}</td>
-                                    <td className={styles.downloadHelper_file_meta}>{file.lastModified}</td>
-                                    <td className={styles.downloadHelper_file_actions}>
-                                        <Tooltip label={`${t('label.delete')} ${file.name}`}>
-                                            <button
-                                                type="button"
-                                                className={styles.downloadHelper_icon_btn}
-                                                aria-label={`${t('label.delete')} ${file.name}`}
-                                                disabled={deleting}
-                                                onClick={() => deleteFile({variables: {filename: file.name}})}
-                                            >
-                                                <Delete aria-hidden="true" focusable="false"/>
-                                            </button>
-                                        </Tooltip>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : !filesLoading ? (
-                    <div className={styles.downloadHelper_files_empty}>{t('files.empty')}</div>
-                ) : null}
-            </div>
-        </div>
+            <DeleteConfirmDialog
+                t={t}
+                dialogRef={deleteDialogRef}
+                pendingName={pendingDeleteName}
+                isDeleting={isConfirming}
+                onConfirm={handleDeleteConfirm}
+                onCancel={handleDeleteCancel}
+                onClose={handleDeleteDialogClose}
+            />
+        </section>
     );
-}
+};
 
 export default DownloadHelperAdmin;

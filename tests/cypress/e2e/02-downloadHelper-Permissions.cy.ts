@@ -23,6 +23,12 @@ describe('Download Helper — permission enforcement', () => {
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const getDownloadHelperInfo: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/query/getDownloadHelperInfo.graphql');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const getDownloadHelperFiles: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/query/getDownloadHelperFiles.graphql');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const triggerDownload: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/mutation/triggerDownload.graphql');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const deleteDownloadedFile: DocumentNode = require('graphql-tag/loader!../fixtures/graphql/mutation/deleteDownloadedFile.graphql');
 
     const errorsOf = (result: {graphQLErrors?: Array<{message: string}>; errors?: Array<{message: string}>}) =>
         result.graphQLErrors ?? result.errors ?? [];
@@ -30,6 +36,11 @@ describe('Download Helper — permission enforcement', () => {
     const queryInfoAs = (username: string) => {
         cy.apolloClient({username, password: PASSWORD});
         return cy.apollo({query: getDownloadHelperInfo});
+    };
+
+    const denyAs = (username: string, op: Record<string, unknown>) => {
+        cy.apolloClient({username, password: PASSWORD});
+        return cy.apollo(op);
     };
 
     before(() => {
@@ -65,6 +76,43 @@ describe('Download Helper — permission enforcement', () => {
                 expect(info).to.have.property('availableSpace');
                 expect(info).to.have.property('downloadFolderPath');
                 expect(info).to.have.property('isMailActivated');
+            });
+        });
+
+        it('denies the downloadHelperFiles query for a user without the permission', () => {
+            denyAs(DENIED_USER, {query: getDownloadHelperFiles}).then((result: never) => {
+                const errs = errorsOf(result);
+                expect(errs, 'denial errors').to.have.length.greaterThan(0);
+                expect(errs.map((e: {message: string}) => e.message).join(' ')).to.contain('Permission denied');
+            });
+        });
+
+        it('denies the downloadHelperTrigger mutation for a user without the permission', () => {
+            denyAs(DENIED_USER, {
+                mutation: triggerDownload,
+                variables: {
+                    protocol: 'https',
+                    url: 'example.com/file.zip',
+                    filename: 'file.zip',
+                    login: null,
+                    password: null,
+                    email: null
+                }
+            }).then((result: never) => {
+                const errs = errorsOf(result);
+                expect(errs, 'denial errors').to.have.length.greaterThan(0);
+                expect(errs.map((e: {message: string}) => e.message).join(' ')).to.contain('Permission denied');
+            });
+        });
+
+        it('denies the downloadHelperDeleteFile mutation for a user without the permission', () => {
+            denyAs(DENIED_USER, {
+                mutation: deleteDownloadedFile,
+                variables: {filename: 'whatever.txt'}
+            }).then((result: never) => {
+                const errs = errorsOf(result);
+                expect(errs, 'denial errors').to.have.length.greaterThan(0);
+                expect(errs.map((e: {message: string}) => e.message).join(' ')).to.contain('Permission denied');
             });
         });
     });

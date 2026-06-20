@@ -4,11 +4,12 @@ import graphql.annotations.annotationTypes.GraphQLDescription;
 import graphql.annotations.annotationTypes.GraphQLField;
 import graphql.annotations.annotationTypes.GraphQLName;
 import graphql.annotations.annotationTypes.GraphQLTypeExtension;
+import org.jahia.modules.downloadhelper.constants.DownloadHelperConstants;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.downloadhelper.util.FileSizeUtils;
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLProvider;
 import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
-import org.jahia.services.SpringContextSingleton;
+import org.jahia.osgi.BundleUtils;
 import org.jahia.services.mail.MailService;
 import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
@@ -37,17 +38,11 @@ public class DownloadHelperQueryExtension {
     @GraphQLField
     @GraphQLName("downloadHelperInfo")
     @GraphQLDescription("Returns server information for the download helper admin panel")
-    @GraphQLRequiresPermission("adminDownloadHelper")
+    @GraphQLRequiresPermission(DownloadHelperConstants.PERMISSION)
     public static GqlServerInfo getDownloadHelperInfo() {
         final boolean isProcessingServer = SettingsBean.getInstance().isProcessingServer();
+        // A read must not mutate the filesystem: reflect the current state rather than creating the folder.
         final File downloadFolder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
-        if (!downloadFolder.exists()) {
-            if (downloadFolder.mkdirs()) {
-                LOGGER.info("Created download folder: {}", DownloadHelperService.DOWNLOAD_FOLDER_PATH);
-            } else {
-                LOGGER.warn("Could not create download folder: {}", DownloadHelperService.DOWNLOAD_FOLDER_PATH);
-            }
-        }
         String availableSpace = "0";
         if (downloadFolder.exists()) {
             try {
@@ -61,7 +56,7 @@ public class DownloadHelperQueryExtension {
             }
         }
 
-        final MailService mailService = (MailService) SpringContextSingleton.getBean("MailService");
+        final MailService mailService = BundleUtils.getOsgiService(MailService.class, null);
         final boolean isMailActivated = mailService != null && mailService.getSettings() != null
                 && mailService.getSettings().isServiceActivated();
 
@@ -71,7 +66,7 @@ public class DownloadHelperQueryExtension {
     @GraphQLField
     @GraphQLName("downloadHelperFiles")
     @GraphQLDescription("Lists files present in the download folder, sorted by last modified date descending")
-    @GraphQLRequiresPermission("adminDownloadHelper")
+    @GraphQLRequiresPermission(DownloadHelperConstants.PERMISSION)
     public static List<GqlDownloadedFile> getDownloadHelperFiles() {
         final File folder = new File(DownloadHelperService.DOWNLOAD_FOLDER_PATH);
         if (!folder.exists() || !folder.isDirectory()) {
@@ -86,6 +81,6 @@ public class DownloadHelperQueryExtension {
         return Arrays.stream(files)
                 .sorted(Comparator.comparingLong(File::lastModified).reversed())
                 .map(f -> new GqlDownloadedFile(f.getName(), f.length(), f.lastModified()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toUnmodifiableList());
     }
 }
