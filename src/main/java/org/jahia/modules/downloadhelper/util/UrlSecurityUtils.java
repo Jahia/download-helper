@@ -61,7 +61,8 @@ public final class UrlSecurityUtils {
 
     /**
      * @return {@code true} when the resolved address is loopback, link-local, site-local, any-local,
-     * multicast, or the canonical cloud-metadata IP — i.e. must never be contacted.
+     * multicast, an IPv6 unique-local address (fc00::/7), or the canonical cloud-metadata IP — i.e.
+     * must never be contacted.
      */
     public static boolean isNonRoutableAddress(InetAddress address) {
         if (address == null) {
@@ -72,7 +73,19 @@ public final class UrlSecurityUtils {
                 || address.isLinkLocalAddress()
                 || address.isSiteLocalAddress()
                 || address.isMulticastAddress()
+                || isUniqueLocalIpv6(address)
                 || CLOUD_METADATA_IP.equals(address.getHostAddress());
+    }
+
+    /**
+     * Detects IPv6 unique-local addresses (fc00::/7). {@link InetAddress#isSiteLocalAddress()} only
+     * covers the deprecated fec0::/10 range in Java, so modern ULA must be checked explicitly.
+     *
+     * @return {@code true} when the address is a 16-byte address whose first byte matches fc00::/7.
+     */
+    private static boolean isUniqueLocalIpv6(InetAddress address) {
+        final byte[] bytes = address.getAddress();
+        return bytes != null && bytes.length == 16 && (bytes[0] & 0xFE) == 0xFC;
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.jahia.modules.downloadhelper.graphql;
 
 import graphql.annotations.annotationTypes.*;
+import org.jahia.modules.downloadhelper.constants.DownloadHelperConstants;
 import org.jahia.modules.downloadhelper.services.DownloadHelperService;
 import org.jahia.modules.downloadhelper.util.DownloadPaths;
 import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
@@ -32,7 +33,7 @@ public class DownloadHelperMutationExtension {
     @GraphQLField
     @GraphQLName("downloadHelperTrigger")
     @GraphQLDescription("Triggers an asynchronous file download on the server")
-    @GraphQLRequiresPermission("adminDownloadHelper")
+    @GraphQLRequiresPermission(DownloadHelperConstants.PERMISSION)
     public static Boolean triggerDownload(
             @GraphQLName("protocol") @GraphQLNonNull final String protocol,
             @GraphQLName("url") @GraphQLNonNull final String url,
@@ -54,16 +55,9 @@ public class DownloadHelperMutationExtension {
 
         final String currentUser = JCRSessionFactory.getInstance().getCurrentUser().getUserKey();
 
-        new Thread(() -> {
-            try {
-                service.download(protocol, url, login, password, filename, email, currentUser);
-            } catch (IOException e) {
-                LOGGER.error("Async download failed for url={} filename={} user={}",
-                        UrlSecurityUtils.sanitizeForLog(url),
-                        UrlSecurityUtils.sanitizeForLog(filename),
-                        UrlSecurityUtils.sanitizeForLog(currentUser), e);
-            }
-        }).start();
+        // Execution is delegated to the service-owned, bundle-lifecycle-tied executor rather than a
+        // raw thread, so downloads are shut down cleanly when the bundle is deactivated.
+        service.submitDownload(protocol, url, login, password, filename, email, currentUser);
 
         return Boolean.TRUE;
     }

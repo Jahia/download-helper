@@ -4,7 +4,8 @@ Jahia OSGi module that lets admins trigger server-side file downloads (HTTPS or 
 
 ## Key Facts
 
-- **artifactId**: `download-helper` | **version**: `2.0.4-SNAPSHOT`
+- **artifactId**: `download-helper` | **version**: `2.0.6-SNAPSHOT` (pom.xml)
+- **npm version**: `2.0.3-SNAPSHOT` (package.json)
 - **Java package**: `org.jahia.modules.downloadhelper`
 - **jahia-depends**: `serverSettings,graphql-dxm-provider,default`
 - **No Blueprint/Spring** — pure OSGi DS
@@ -31,7 +32,7 @@ Jahia OSGi module that lets admins trigger server-side file downloads (HTTPS or 
 | Mutation | `downloadHelperTrigger(protocol!, url!, filename!, login, password, email)` → Boolean | Launches async thread; returns immediately |
 | Mutation | `downloadHelperDeleteFile(filename!)` → Boolean | Path-traversal–protected via canonical path check |
 
-All operations require `adminSystemInfos` permission.
+All operations require `adminDownloadHelper` permission.
 
 ## Email Notifications
 
@@ -95,7 +96,7 @@ The SSRF and log-injection predicates live in `org.jahia.modules.downloadhelper.
   path that logs `url` / `filename` / `user`, including the async failure catch in the mutation.
 - **Accepted residual: DNS-rebinding TOCTOU.** `assertSafeHost` resolves DNS, then the HTTP client
   re-resolves at connect time. Fully closing this requires IP pinning via a custom connection manager;
-  given the `adminSystemInfos` permission gate it is documented as an accepted residual rather than
+  given the `adminDownloadHelper` permission gate it is documented as an accepted residual rather than
   fixed.
 
 ## Gotchas

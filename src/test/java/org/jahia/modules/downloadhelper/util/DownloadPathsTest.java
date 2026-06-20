@@ -26,7 +26,7 @@ class DownloadPathsTest {
 
         assertThat(resolved.getParentFile().getCanonicalPath())
                 .isEqualTo(folder.toFile().getCanonicalPath());
-        assertThat(resolved.getName()).isEqualTo("report.zip");
+        assertThat(resolved).hasName("report.zip");
     }
 
     @Test
@@ -34,7 +34,7 @@ class DownloadPathsTest {
     void stripsDirectoryComponents() throws IOException {
         final File resolved = DownloadPaths.resolveContainedFile(folder.toString(), "sub/dir/report.zip");
 
-        assertThat(resolved.getName()).isEqualTo("report.zip");
+        assertThat(resolved).hasName("report.zip");
         assertThat(resolved.getParentFile().getCanonicalPath())
                 .isEqualTo(folder.toFile().getCanonicalPath());
     }
@@ -46,6 +46,39 @@ class DownloadPathsTest {
     void rejectsEmptyOrTraversalOnlyNames(String raw) {
         assertThatThrownBy(() -> DownloadPaths.resolveContainedFile(folder.toString(), raw))
                 .isInstanceOf(IOException.class);
+    }
+
+    @Test
+    @DisplayName("whitespace-only filename should be rejected")
+    void whiteSpaceOnlyFilenameRejected() {
+        assertThatThrownBy(() -> DownloadPaths.resolveContainedFile(folder.toString(), "   "))
+                .isInstanceOf(IOException.class);
+    }
+
+    @Test
+    @DisplayName("a filename whose folder component is exactly the folder name does not escape the folder")
+    void folderNameEdge() throws IOException {
+        // A filename equal to the containing folder's own name (e.g. "jahia-download-helper")
+        // must still land inside that folder, not resolve to it or escape it.
+        final String folderName = folder.toFile().getName();
+        final File resolved = DownloadPaths.resolveContainedFile(folder.toString(), folderName + ".zip");
+
+        assertThat(resolved.getCanonicalPath())
+                .startsWith(folder.toFile().getCanonicalPath() + File.separator);
+        assertThat(resolved).hasName(folderName + ".zip");
+    }
+
+    @Test
+    @DisplayName("very long filename is accepted when it stays inside the folder")
+    void veryLongFilename() throws IOException {
+        // 200-char name: well within typical FS limits (255 bytes on ext4/HFS+/NTFS) but exercises
+        // the code path with a large input.
+        final String longName = "a".repeat(200) + ".zip";
+        final File resolved = DownloadPaths.resolveContainedFile(folder.toString(), longName);
+
+        assertThat(resolved.getCanonicalPath())
+                .startsWith(folder.toFile().getCanonicalPath() + File.separator);
+        assertThat(resolved).hasName(longName);
     }
 
     @ParameterizedTest

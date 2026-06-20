@@ -31,7 +31,7 @@ public final class DownloadPaths {
      */
     public static File resolveContainedFile(String folderPath, String rawFilename) throws IOException {
         final String safeName = FilenameUtils.getName(rawFilename);
-        if (safeName == null || safeName.isEmpty() || ".".equals(safeName) || "..".equals(safeName)) {
+        if (safeName == null || safeName.isBlank() || ".".equals(safeName) || "..".equals(safeName)) {
             throw new IOException("Invalid or empty filename");
         }
 

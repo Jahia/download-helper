@@ -1,0 +1,62 @@
+{
+  "label": {
+    "menu_entry": "Download-Helfer",
+    "protocol": "Protokoll",
+    "url": "URL",
+    "filename": "Dateiname",
+    "login": "Benutzername (optional)",
+    "password": "Passwort (nur bei Benutzername)",
+    "email": "E-Mail",
+    "trigger": "Download starten",
+    "triggering": "Wird gestartet…",
+    "loading": "Wird geladen…",
+    "delete": "Löschen",
+    "deleting": "Wird gelöscht…",
+    "refresh": "Aktualisieren",
+    "actions": "Aktionen",
+    "filesStatus": "Status der heruntergeladenen Dateien"
+  },
+  "files": {
+    "title": "Heruntergeladene Dateien",
+    "empty": "Keine Dateien im Download-Ordner.",
+    "name": "Name",
+    "size": "Größe",
+    "lastModified": "Zuletzt geändert"
+  },
+  "downloadHelper": {
+    "settings": "Download-Helfer",
+    "info": "Verfügbar: {{availableSpace}} in {{downloadFolderPath}}",
+    "notProcessingServer": "Dieses Modul kann nur auf dem Verarbeitungsserver verwendet werden.",
+    "protocolHint": "Das Protokoll wird automatisch erkannt, wenn Sie eine vollständige URL einfügen.",
+    "confirmDelete": "„{{name}}“ löschen? Dies kann nicht rückgängig gemacht werden.",
+    "deleteDialog": {
+      "title": "Datei löschen",
+      "body": "„{{name}}“ löschen? Dies kann nicht rückgängig gemacht werden.",
+      "confirm": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "success": {
+      "started": "Download gestartet."
+    },
+    "errors": {
+      "trigger": {
+        "failed": "Der Download konnte nicht gestartet werden."
+      },
+      "load": {
+        "failed": "Die Serverinformationen konnten nicht geladen werden."
+      },
+      "files": {
+        "failed": "Die Liste der heruntergeladenen Dateien konnte nicht geladen werden."
+      },
+      "mail": {
+        "disabled": "Der Mail-Dienst ist nicht aktiviert. Es werden keine E-Mail-Benachrichtigungen gesendet."
+      },
+      "url": {
+        "required": "URL ist erforderlich."
+      },
+      "filename": {
+        "required": "Dateiname ist erforderlich."
+      }
+    }
+  }
+}

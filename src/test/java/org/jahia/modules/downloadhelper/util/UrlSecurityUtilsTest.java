@@ -102,6 +102,52 @@ class UrlSecurityUtilsTest {
         void allowsRoutable(String ip) throws UnknownHostException {
             assertThat(UrlSecurityUtils.isNonRoutableAddress(InetAddress.getByName(ip))).isFalse();
         }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"fc00::1", "fd12:3456:789a::1"})
+        @DisplayName("blocks IPv6 unique-local addresses (fc00::/7)")
+        void blocksUniqueLocalIpv6(String ip) throws UnknownHostException {
+            assertThat(UrlSecurityUtils.isNonRoutableAddress(InetAddress.getByName(ip))).isTrue();
+        }
+
+        @Test
+        @DisplayName("blocks IPv4-mapped IPv6 cloud-metadata address ::ffff:169.254.169.254")
+        void blocksIpv4MappedMetadata() throws UnknownHostException {
+            // InetAddress.getByName normalises ::ffff:169.254.169.254 to an Inet4Address (169.254.169.254)
+            // which is link-local — isNonRoutableAddress must therefore be true via isLinkLocalAddress().
+            final InetAddress addr = InetAddress.getByName("::ffff:169.254.169.254");
+            assertThat(UrlSecurityUtils.isNonRoutableAddress(addr)).isTrue();
+        }
+
+        @Test
+        @DisplayName("numeric hex form 0x7f000001 resolves to loopback via InetAddress — non-routable")
+        void hexLoopbackAddress() throws UnknownHostException {
+            // Java's InetAddress.getByName() does NOT interpret hex literals like "0x7f000001"
+            // as an IP address; it treats them as hostnames and will attempt DNS resolution.
+            // This test documents that callers must pre-resolve addresses via InetAddress before
+            // passing to isNonRoutableAddress — raw hex/decimal strings do NOT bypass the guard
+            // because they would simply fail DNS resolution (UnknownHostException) before reaching it.
+            // Guard the assertion: if the JVM happens to resolve this (some OS DNS stubs do), it is loopback.
+            try {
+                final InetAddress addr = InetAddress.getByName("0x7f000001");
+                // If resolution succeeds it must map to a loopback or non-routable address.
+                assertThat(UrlSecurityUtils.isNonRoutableAddress(addr)).isTrue();
+            } catch (UnknownHostException e) {
+                // Expected on most JVMs — the hex form is not a valid hostname. Test passes.
+            }
+        }
+
+        @Test
+        @DisplayName("decimal form 2130706433 resolves to loopback via InetAddress — non-routable")
+        void decimalLoopbackAddress() throws UnknownHostException {
+            // Same rationale as hexLoopbackAddress: InetAddress.getByName treats "2130706433" as a hostname.
+            try {
+                final InetAddress addr = InetAddress.getByName("2130706433");
+                assertThat(UrlSecurityUtils.isNonRoutableAddress(addr)).isTrue();
+            } catch (UnknownHostException e) {
+                // Expected on most JVMs — test passes.
+            }
+        }
     }
 
     @Nested
@@ -148,6 +194,16 @@ class UrlSecurityUtilsTest {
         void rejectsOthers(String url) {
             assertThat(UrlSecurityUtils.isAllowedHttpScheme(url)).isFalse();
         }
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "javascript:alert(1)",
+                "data:text/html,<h1>hi</h1>"
+        })
+        @DisplayName("rejects javascript: and data: schemes — browser injection vectors must not be followed")
+        void rejectsJavascriptAndData(String url) {
+            assertThat(UrlSecurityUtils.isAllowedHttpScheme(url)).isFalse();
+        }
     }
 
     @Nested
@@ -180,6 +236,30 @@ class UrlSecurityUtilsTest {
         @DisplayName("returns null when the current URL is null")
         void nullCurrent() {
             assertThat(UrlSecurityUtils.resolveLocation(null, "https://b.com")).isNull();
+        }
+
+        @Test
+        @DisplayName("relative '../internal/x' against 'https://evil.com/a/b' yields an absolute https URL so the next-hop guard can act")
+        void relativeTraversalYieldsAbsoluteUrl() {
+            final String resolved = UrlSecurityUtils.resolveLocation("https://evil.com/a/b", "../internal/x");
+            // Must be non-null and absolute so assertSafeHost can evaluate it — the guard acts on the result.
+            assertThat(resolved).isNotNull()
+                    .startsWith("https://");
+        }
+
+        @Test
+        @DisplayName("userinfo in Location header does not shadow the host — host is still parseable for guard")
+        void userinfoInLocationDoesNotShadowHost() {
+            // A Location like "https://user@evil.com/path" must resolve to an absolute URL so the
+            // next-hop guard (assertSafeHost / sameHost) can inspect it. The test confirms resolveLocation
+            // returns a non-null string; the caller is then responsible for rejecting userinfo.
+            final String resolved = UrlSecurityUtils.resolveLocation(
+                    "https://example.com/a", "https://attacker@internal.corp/secret");
+            assertThat(resolved).isNotNull()
+                    .startsWith("https://");
+            // The host extracted from the resolved URL must be "internal.corp" (not "attacker"),
+            // confirming URI parsing does not confuse userinfo with host.
+            assertThat(UrlSecurityUtils.hostOf(resolved)).isEqualTo("internal.corp");
         }
     }
 

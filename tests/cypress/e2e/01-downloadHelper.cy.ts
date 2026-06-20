@@ -134,10 +134,10 @@ describe('Download Helper', () => {
         cy.visit(adminPath);
         cy.get('input[placeholder="example.com/path/to/file"]').click();
         cy.get('input[placeholder="example.com/path/to/file"]').type('store.jahia.com/cms/mavenproxy/private-app-store/org/jahia/modules/addstuff/3.0.0/addstuff-3.0.0.jar');
-        cy.get('#reactComponent button.moonstone-button_primary span.flexFluid').click();
+        cy.contains('button', 'Start download').click();
         cy.contains('button', 'Refresh').should('be.visible');
-        cy.get('#reactComponent span.moonstone-weight_light').click();
-        cy.contains('addstuff-3.0.0.jar');
+        cy.contains('button', 'Refresh').click();
+        cy.contains('addstuff-3.0.0.jar', {timeout: 30000});
     });
 
     it('deletes a non-existent file via GraphQL and returns false', () => {
