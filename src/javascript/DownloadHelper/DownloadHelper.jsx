@@ -489,7 +489,7 @@ export const DownloadHelperAdmin = () => {
                     email: email || null
                 }
             });
-            if (result.data?.downloadHelperTrigger === true) {
+            if (result.data?.downloadHelper?.trigger === true) {
                 setTriggerStatus('success');
                 resetForm();
             } else {
@@ -572,13 +572,13 @@ export const DownloadHelperAdmin = () => {
         );
     }
 
-    const info = data?.downloadHelperInfo;
+    const info = data?.downloadHelper?.info;
 
     if (!info || !info.isProcessingServer) {
         return <NotProcessingServer t={t}/>;
     }
 
-    const files = filesData?.downloadHelperFiles;
+    const files = filesData?.downloadHelper?.files;
     const hasFiles = !filesLoading && files && files.length > 0;
     const showEmpty = !filesLoading && !filesError && (!files || files.length === 0);
 

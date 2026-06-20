@@ -1,8 +1,10 @@
 query GetDownloadHelperInfo {
-    downloadHelperInfo {
-        isProcessingServer
-        availableSpace
-        downloadFolderPath
-        isMailActivated
+    downloadHelper {
+        info {
+            isProcessingServer
+            availableSpace
+            downloadFolderPath
+            isMailActivated
+        }
     }
 }
