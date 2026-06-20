@@ -28,7 +28,6 @@
     "info": "Verfügbar: {{availableSpace}} in {{downloadFolderPath}}",
     "notProcessingServer": "Dieses Modul kann nur auf dem Verarbeitungsserver verwendet werden.",
     "protocolHint": "Das Protokoll wird automatisch erkannt, wenn Sie eine vollständige URL einfügen.",
-    "confirmDelete": "„{{name}}“ löschen? Dies kann nicht rückgängig gemacht werden.",
     "deleteDialog": {
       "title": "Datei löschen",
       "body": "„{{name}}“ löschen? Dies kann nicht rückgängig gemacht werden.",

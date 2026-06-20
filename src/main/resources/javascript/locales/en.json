@@ -28,7 +28,6 @@
     "info": "Available: {{availableSpace}} in {{downloadFolderPath}}",
     "notProcessingServer": "This module can only be used on the processing server.",
     "protocolHint": "The protocol is detected automatically when you paste a full URL.",
-    "confirmDelete": "Delete \"{{name}}\"? This cannot be undone.",
     "deleteDialog": {
       "title": "Delete file",
       "body": "Delete \"{{name}}\"? This cannot be undone.",

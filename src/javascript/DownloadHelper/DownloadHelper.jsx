@@ -132,12 +132,13 @@ const DownloadForm = ({t, info, formState, isSubmitted, isTriggering, onSubmit, 
                     id="dh-protocol"
                     className={styles.downloadHelper_select}
                     value={protocol}
+                    aria-describedby="dh-protocol-hint"
                     onChange={onProtocolChange}
                 >
                     <option value="https">https://</option>
                     <option value="ftp">ftp://</option>
                 </select>
-                <span className={styles.downloadHelper_hint}>{t('downloadHelper.protocolHint')}</span>
+                <span id="dh-protocol-hint" className={styles.downloadHelper_hint}>{t('downloadHelper.protocolHint')}</span>
             </Field>
 
             <ValidatedField
@@ -186,7 +187,6 @@ const DownloadForm = ({t, info, formState, isSubmitted, isTriggering, onSubmit, 
             <Field
                 id="dh-email"
                 label={t('label.email')}
-                hint={info.isMailActivated ? undefined : t('downloadHelper.errors.mail.disabled')}
             >
                 <Input
                     id="dh-email"
@@ -297,6 +297,7 @@ const FilesSection = ({t, refreshAreaRef, isFilesLoading, filesError, hasFiles, 
         </div>
 
         <output
+            aria-atomic="true"
             aria-label={t('label.filesStatus')}
             aria-live="polite"
             className={isFilesLoading ? styles.downloadHelper_loading : undefined}
@@ -405,6 +406,7 @@ export const DownloadHelperAdmin = () => {
     const [submitted, setSubmitted] = useState(false);
     const [deletingName, setDeletingName] = useState(null);
     const [pendingDeleteName, setPendingDeleteName] = useState(null);
+    const [isConfirming, setIsConfirming] = useState(false);
     const filenameManuallySet = useRef(false);
     const visibleAlertRef = useRef(null);
     const refreshAreaRef = useRef(null);
@@ -449,10 +451,14 @@ export const DownloadHelperAdmin = () => {
         refetchQueries: [{query: GET_DOWNLOAD_HELPER_FILES}],
         onCompleted: () => {
             setDeletingName(null);
+            setIsConfirming(false);
             const firstFocusable = refreshAreaRef.current?.querySelector('button:not(:disabled)');
             firstFocusable?.focus();
         },
-        onError: () => setDeletingName(null)
+        onError: () => {
+            setDeletingName(null);
+            setIsConfirming(false);
+        }
     });
 
     const resetForm = () => {
@@ -489,8 +495,7 @@ export const DownloadHelperAdmin = () => {
             } else {
                 setTriggerStatus('error');
             }
-        } catch (err) {
-            console.error('Failed to trigger download:', err);
+        } catch {
             setTriggerStatus('error');
         }
 
@@ -529,8 +534,10 @@ export const DownloadHelperAdmin = () => {
 
     const handleDeleteConfirm = () => {
         const name = pendingDeleteName;
+        setIsConfirming(true);
         deleteDialogRef.current?.close();
         if (!name) {
+            setIsConfirming(false);
             return;
         }
 
@@ -551,7 +558,7 @@ export const DownloadHelperAdmin = () => {
 
     if (loading) {
         return (
-            <output className={styles.downloadHelper_loading}>
+            <output aria-live="polite" className={styles.downloadHelper_loading}>
                 {t('label.loading')}
             </output>
         );
@@ -630,7 +637,7 @@ export const DownloadHelperAdmin = () => {
                 t={t}
                 dialogRef={deleteDialogRef}
                 pendingName={pendingDeleteName}
-                isDeleting={deletingName !== null}
+                isDeleting={isConfirming}
                 onConfirm={handleDeleteConfirm}
                 onCancel={handleDeleteCancel}
                 onClose={handleDeleteDialogClose}

@@ -28,7 +28,6 @@
     "info": "Disponible : {{availableSpace}} dans {{downloadFolderPath}}",
     "notProcessingServer": "Ce module ne peut être utilisé que sur le serveur de traitement.",
     "protocolHint": "Le protocole est détecté automatiquement lorsque vous collez une URL complète.",
-    "confirmDelete": "Supprimer « {{name}} » ? Cette action est irréversible.",
     "deleteDialog": {
       "title": "Supprimer le fichier",
       "body": "Supprimer « {{name}} » ? Cette action est irréversible.",

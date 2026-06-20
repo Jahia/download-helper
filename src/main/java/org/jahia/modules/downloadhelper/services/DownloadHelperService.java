@@ -39,6 +39,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -161,16 +162,26 @@ public class DownloadHelperService {
      */
     public void submitDownload(String protocol, String url, String login, String password,
             String filename, String ccEmail, String user) {
-        downloadExecutor.submit(() -> {
-            try {
-                download(protocol, url, login, password, filename, ccEmail, user);
-            } catch (IOException | RuntimeException e) {
-                if (LOGGER.isErrorEnabled()) {
-                    LOGGER.error("Async download failed for url={} filename={} user={}",
-                            sanitizeForLog(url), sanitizeForLog(filename), sanitizeForLog(user), e);
+        try {
+            downloadExecutor.submit(() -> {
+                try {
+                    download(protocol, url, login, password, filename, ccEmail, user);
+                } catch (IOException | RuntimeException e) {
+                    if (LOGGER.isErrorEnabled()) {
+                        LOGGER.error("Async download failed for url={} filename={} user={}",
+                                sanitizeForLog(url), sanitizeForLog(filename), sanitizeForLog(user), e);
+                    }
                 }
+            });
+        } catch (RejectedExecutionException e) {
+            // The executor has been (or is being) shut down on @Deactivate; a late submitDownload
+            // (e.g. a GraphQL mutation racing bundle deactivation) must not propagate an unchecked
+            // exception to the client. Log and return gracefully instead.
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn("Download request rejected: the download executor is shutting down for user={}",
+                        sanitizeForLog(user));
             }
-        });
+        }
     }
 
     public void download(String protocol, String url, String login, String password,
