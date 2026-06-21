@@ -6,7 +6,7 @@ Jahia OSGi module that lets admins trigger server-side file downloads (HTTPS or 
 
 - **artifactId**: `download-helper` | **version**: `2.0.6-SNAPSHOT` (pom.xml)
 - **npm version**: `2.0.3-SNAPSHOT` (package.json)
-- **Java package**: `org.jahia.modules.downloadhelper`
+- **Java package**: `org.jahia.community.downloadhelper`
 - **jahia-depends**: `serverSettings,graphql-dxm-provider,default`
 - **No Blueprint/Spring** — pure OSGi DS
 
@@ -79,7 +79,7 @@ yarn install
 
 ## Security invariants (do not regress) — SECURITY-746
 
-The SSRF and log-injection predicates live in `org.jahia.modules.downloadhelper.util.UrlSecurityUtils`
+The SSRF and log-injection predicates live in `org.jahia.community.downloadhelper.util.UrlSecurityUtils`
 (pure, no DNS/OSGi, fully unit-tested). Do not duplicate them inline — extend the helper instead.
 
 - **No automatic redirect following on the HTTPS download.** `downloadHttps` follows redirects manually

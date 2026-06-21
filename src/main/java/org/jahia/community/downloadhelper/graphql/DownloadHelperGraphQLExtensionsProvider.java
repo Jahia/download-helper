@@ -1,4 +1,4 @@
-package org.jahia.modules.downloadhelper.graphql;
+package org.jahia.community.downloadhelper.graphql;
 
 import org.jahia.modules.graphql.provider.dxm.DXGraphQLExtensionsProvider;
 import org.osgi.service.component.annotations.Component;

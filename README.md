@@ -5,7 +5,7 @@ Jahia OSGi module that lets admins trigger server-side file downloads (HTTPS or 
 ## Key Facts
 
 - **artifactId**: `download-helper` | **version**: `2.0.6-SNAPSHOT`
-- **Java package**: `org.jahia.modules.downloadhelper`
+- **Java package**: `org.jahia.community.downloadhelper`
 - **jahia-depends**: `serverSettings,graphql-dxm-provider,default`
 - **GraphQL API** — admin UI backed by GraphQL mutations/queries gated by `adminDownloadHelper` permission
 - **No Blueprint/Spring** — pure OSGi DS

@@ -1,4 +1,4 @@
-package org.jahia.modules.downloadhelper.util;
+package org.jahia.community.downloadhelper.util;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

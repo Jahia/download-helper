@@ -1,9 +1,9 @@
-package org.jahia.modules.downloadhelper.graphql;
+package org.jahia.community.downloadhelper.graphql;
 
 import graphql.annotations.annotationTypes.GraphQLDescription;
 import graphql.annotations.annotationTypes.GraphQLField;
 import graphql.annotations.annotationTypes.GraphQLName;
-import org.jahia.modules.downloadhelper.util.FileSizeUtils;
+import org.jahia.community.downloadhelper.util.FileSizeUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

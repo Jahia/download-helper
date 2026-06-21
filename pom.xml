@@ -138,7 +138,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <_dsannotations>org.jahia.modules.downloadhelper.*</_dsannotations>
+            <_dsannotations>org.jahia.community.downloadhelper.*</_dsannotations>
           </instructions>
         </configuration>
       </plugin>

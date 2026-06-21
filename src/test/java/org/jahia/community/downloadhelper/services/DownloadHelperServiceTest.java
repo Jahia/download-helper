@@ -1,4 +1,4 @@
-package org.jahia.modules.downloadhelper.services;
+package org.jahia.community.downloadhelper.services;
 
 import org.jahia.services.mail.MailService;
 import org.jahia.services.notification.HttpClientService;
@@ -172,7 +172,7 @@ class DownloadHelperServiceTest {
             // The exact string value is referenced by RBAC config and Cypress tests; locking it here
             // prevents accidental renames from silently breaking access control.
             org.assertj.core.api.Assertions.assertThat(
-                    org.jahia.modules.downloadhelper.constants.DownloadHelperConstants.PERMISSION)
+                    org.jahia.community.downloadhelper.constants.DownloadHelperConstants.PERMISSION)
                     .isEqualTo("adminDownloadHelper");
         }
     }
