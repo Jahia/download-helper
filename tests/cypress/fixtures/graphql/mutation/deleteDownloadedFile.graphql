@@ -1,3 +1,5 @@
 mutation DeleteDownloadedFile($filename: String!) {
-    downloadHelperDeleteFile(filename: $filename)
+    downloadHelper {
+        deleteFile(filename: $filename)
+    }
 }

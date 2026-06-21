@@ -59,7 +59,7 @@ jest.mock('@jahia/moonstone', () => ({
 
 const {useQuery, useMutation} = require('@apollo/client');
 
-function setupMocks({infoData, filesData, triggerResult = {data: {downloadHelperTrigger: true}}}) {
+function setupMocks({infoData, filesData, triggerResult = {data: {downloadHelper: {trigger: true}}}}) {
     // Identify the query by its parsed operation name so re-renders don't skew a counter.
     useQuery.mockImplementation(query => {
         const opName = query?.definitions?.[0]?.name?.value || '';
@@ -88,15 +88,17 @@ function setupMocks({infoData, filesData, triggerResult = {data: {downloadHelper
 }
 
 const defaultInfo = {
-    downloadHelperInfo: {
-        isProcessingServer: true,
-        isMailActivated: true,
-        availableSpace: '10 GiB',
-        downloadFolderPath: '/tmp/jahia-download-helper'
+    downloadHelper: {
+        info: {
+            isProcessingServer: true,
+            isMailActivated: true,
+            availableSpace: '10 GiB',
+            downloadFolderPath: '/tmp/jahia-download-helper'
+        }
     }
 };
 
-const defaultFiles = {downloadHelperFiles: []};
+const defaultFiles = {downloadHelper: {files: []}};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -111,11 +113,13 @@ describe('DownloadHelperAdmin', () => {
         // Arrange
         setupMocks({
             infoData: {
-                downloadHelperInfo: {
-                    isProcessingServer: true,
-                    isMailActivated: false,
-                    availableSpace: 'x',
-                    downloadFolderPath: '/tmp'
+                downloadHelper: {
+                    info: {
+                        isProcessingServer: true,
+                        isMailActivated: false,
+                        availableSpace: 'x',
+                        downloadFolderPath: '/tmp'
+                    }
                 }
             },
             filesData: defaultFiles
@@ -137,11 +141,13 @@ describe('DownloadHelperAdmin', () => {
         // Arrange
         setupMocks({
             infoData: {
-                downloadHelperInfo: {
-                    isProcessingServer: false,
-                    isMailActivated: true,
-                    availableSpace: '0',
-                    downloadFolderPath: '/tmp'
+                downloadHelper: {
+                    info: {
+                        isProcessingServer: false,
+                        isMailActivated: true,
+                        availableSpace: '0',
+                        downloadFolderPath: '/tmp'
+                    }
                 }
             },
             filesData: defaultFiles
@@ -162,7 +168,7 @@ describe('DownloadHelperAdmin', () => {
         setupMocks({
             infoData: defaultInfo,
             filesData: defaultFiles,
-            triggerResult: {data: {downloadHelperTrigger: false}}
+            triggerResult: {data: {downloadHelper: {trigger: false}}}
         });
 
         render(<DownloadHelperAdmin/>);

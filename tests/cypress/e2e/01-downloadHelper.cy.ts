@@ -18,7 +18,7 @@ describe('Download Helper', () => {
 
     it('returns server info via GraphQL', () => {
         cy.apollo({query: getDownloadHelperInfo})
-            .its('data.downloadHelperInfo')
+            .its('data.downloadHelper.info')
             .should(info => {
                 expect(info).to.have.property('isProcessingServer');
                 expect(info).to.have.property('availableSpace');
@@ -105,7 +105,7 @@ describe('Download Helper', () => {
 
     it('returns an empty file list via GraphQL when no files are present', () => {
         cy.apollo({query: getDownloadHelperFiles})
-            .its('data.downloadHelperFiles')
+            .its('data.downloadHelper.files')
             .should('be.an', 'array');
     });
 
@@ -121,7 +121,7 @@ describe('Download Helper', () => {
                 email: null
             }
         })
-            .its('data.downloadHelperTrigger')
+            .its('data.downloadHelper.trigger')
             .should('eq', true);
         cy.apollo({
             mutation: deleteDownloadedFile,
@@ -145,7 +145,7 @@ describe('Download Helper', () => {
             mutation: deleteDownloadedFile,
             variables: {filename: 'does-not-exist.txt'}
         })
-            .its('data.downloadHelperDeleteFile')
+            .its('data.downloadHelper.deleteFile')
             .should('eq', false);
     });
 
@@ -154,7 +154,7 @@ describe('Download Helper', () => {
             mutation: deleteDownloadedFile,
             variables: {filename: '../../../etc/passwd'}
         })
-            .its('data.downloadHelperDeleteFile')
+            .its('data.downloadHelper.deleteFile')
             .should('eq', false);
     });
 

@@ -2,28 +2,34 @@ import {gql} from '@apollo/client';
 
 export const GET_DOWNLOAD_HELPER_INFO = gql`
     query DownloadHelperInfo {
-        downloadHelperInfo {
-            isProcessingServer
-            availableSpace
-            downloadFolderPath
-            isMailActivated
+        downloadHelper {
+            info {
+                isProcessingServer
+                availableSpace
+                downloadFolderPath
+                isMailActivated
+            }
         }
     }
 `;
 
 export const GET_DOWNLOAD_HELPER_FILES = gql`
     query DownloadHelperFiles {
-        downloadHelperFiles {
-            name
-            size
-            lastModified
+        downloadHelper {
+            files {
+                name
+                size
+                lastModified
+            }
         }
     }
 `;
 
 export const DELETE_DOWNLOADED_FILE = gql`
     mutation DeleteDownloadedFile($filename: String!) {
-        downloadHelperDeleteFile(filename: $filename)
+        downloadHelper {
+            deleteFile(filename: $filename)
+        }
     }
 `;
 
@@ -36,13 +42,15 @@ export const TRIGGER_DOWNLOAD = gql`
         $password: String
         $email: String
     ) {
-        downloadHelperTrigger(
-            protocol: $protocol
-            url: $url
-            filename: $filename
-            login: $login
-            password: $password
-            email: $email
-        )
+        downloadHelper {
+            trigger(
+                protocol: $protocol
+                url: $url
+                filename: $filename
+                login: $login
+                password: $password
+                email: $email
+            )
+        }
     }
 `;

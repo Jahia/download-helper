@@ -71,7 +71,7 @@ describe('Download Helper — permission enforcement', () => {
         it('allows the gated query for a user granted only the module permission', () => {
             queryInfoAs(ALLOWED_USER).then((result: never) => {
                 expect(errorsOf(result), 'should have no errors').to.have.length(0);
-                const info = (result as {data: {downloadHelperInfo: {downloadFolderPath: string}}}).data.downloadHelperInfo;
+                const info = (result as {data: {downloadHelper: {info: {downloadFolderPath: string}}}}).data.downloadHelper.info;
                 expect(info).to.have.property('isProcessingServer');
                 expect(info).to.have.property('availableSpace');
                 expect(info).to.have.property('downloadFolderPath');
