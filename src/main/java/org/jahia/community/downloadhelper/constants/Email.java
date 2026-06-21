@@ -1,4 +1,4 @@
-package org.jahia.modules.downloadhelper.constants;
+package org.jahia.community.downloadhelper.constants;
 
 public final class Email {
 

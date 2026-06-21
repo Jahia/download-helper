@@ -1,4 +1,4 @@
-package org.jahia.modules.downloadhelper.services;
+package org.jahia.community.downloadhelper.services;
 
 import org.apache.commons.net.util.Base64;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
@@ -8,10 +8,10 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
-import org.jahia.modules.downloadhelper.constants.Email;
-import org.jahia.modules.downloadhelper.util.DownloadPaths;
-import org.jahia.modules.downloadhelper.util.FileSizeUtils;
-import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
+import org.jahia.community.downloadhelper.constants.Email;
+import org.jahia.community.downloadhelper.util.DownloadPaths;
+import org.jahia.community.downloadhelper.util.FileSizeUtils;
+import org.jahia.community.downloadhelper.util.UrlSecurityUtils;
 import org.jahia.services.mail.MailService;
 import org.jahia.services.notification.HttpClientService;
 import org.osgi.service.component.annotations.Activate;
@@ -43,7 +43,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import static org.jahia.modules.downloadhelper.util.UrlSecurityUtils.sanitizeForLog;
+import static org.jahia.community.downloadhelper.util.UrlSecurityUtils.sanitizeForLog;
 
 @Component(service = DownloadHelperService.class)
 public class DownloadHelperService {

@@ -1,4 +1,4 @@
-package org.jahia.modules.downloadhelper.graphql;
+package org.jahia.community.downloadhelper.graphql;
 
 import graphql.annotations.annotationTypes.GraphQLDescription;
 import graphql.annotations.annotationTypes.GraphQLField;

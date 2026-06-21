@@ -1,4 +1,4 @@
-package org.jahia.modules.downloadhelper.constants;
+package org.jahia.community.downloadhelper.constants;
 
 /**
  * Shared, non-instantiable constants for the download-helper module.

@@ -1,10 +1,10 @@
-package org.jahia.modules.downloadhelper.graphql;
+package org.jahia.community.downloadhelper.graphql;
 
 import graphql.annotations.annotationTypes.*;
-import org.jahia.modules.downloadhelper.constants.DownloadHelperConstants;
-import org.jahia.modules.downloadhelper.services.DownloadHelperService;
-import org.jahia.modules.downloadhelper.util.DownloadPaths;
-import org.jahia.modules.downloadhelper.util.UrlSecurityUtils;
+import org.jahia.community.downloadhelper.constants.DownloadHelperConstants;
+import org.jahia.community.downloadhelper.services.DownloadHelperService;
+import org.jahia.community.downloadhelper.util.DownloadPaths;
+import org.jahia.community.downloadhelper.util.UrlSecurityUtils;
 import org.jahia.modules.graphql.provider.dxm.security.GraphQLRequiresPermission;
 import org.jahia.osgi.BundleUtils;
 import org.jahia.services.content.JCRSessionFactory;
