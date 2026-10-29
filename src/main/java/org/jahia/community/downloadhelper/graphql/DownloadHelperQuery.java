@@ -51,8 +51,7 @@ public class DownloadHelperQuery {
         }
 
         final MailService mailService = BundleUtils.getOsgiService(MailService.class, null);
-        final boolean isMailActivated = mailService != null && mailService.getSettings() != null
-                && mailService.getSettings().isServiceActivated();
+        final boolean isMailActivated = mailService != null && mailService.isEnabled();
 
         return new GqlServerInfo(isProcessingServer, availableSpace, DownloadHelperService.DOWNLOAD_FOLDER_PATH, isMailActivated);
     }

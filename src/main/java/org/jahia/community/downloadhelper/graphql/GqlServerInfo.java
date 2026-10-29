@@ -43,7 +43,7 @@ public class GqlServerInfo {
 
     @GraphQLField
     @GraphQLName("isMailActivated")
-    @GraphQLDescription("Whether the mail service is activated (MailSettings.isServiceActivated)")
+    @GraphQLDescription("Whether the mail service can send mail (MailService.isEnabled)")
     public boolean isMailActivated() {
         return mailActivated;
     }
