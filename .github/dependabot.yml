@@ -77,6 +77,13 @@ updates:
     ignore:
       # The Jahia parent and org.jahia.* artifacts define the target Jahia version
       - dependency-name: "org.jahia.*"
+      # Platform-provided APIs: bumping raises Import-Package / Require-Capability
+      # floors above what Jahia 8.2 ships (Felix SCR 2.1.30 / DS 1.4,
+      # graphql-java-annotations 21.1)
+      - dependency-name: "org.osgi:*"
+      - dependency-name: "io.github.graphql-java:*"
+      - dependency-name: "com.graphql-java:*"
+      - dependency-name: "com.graphql-java-kickstart:*"
       # frontend-maven-plugin 2.x requires a Java 17 Maven runtime
       - dependency-name: "com.github.eirslett:frontend-maven-plugin"
         update-types: ["version-update:semver-major"]
