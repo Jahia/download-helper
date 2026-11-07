@@ -40,8 +40,13 @@
     "react-i18next": "^11.18.6"
   },
   "resolutions": {
+    "**/@jest/reporters/glob": "^14.0.3",
     "**/cacache/glob": "^14.0.3",
     "**/cacache/glob/minimatch": "^11.0.1",
+    "**/jest-config/glob": "^14.0.3",
+    "**/jest-runtime/glob": "^14.0.3",
+    "**/test-exclude/glob": "^14.0.3",
+    "**/test-exclude/minimatch": "^11.0.1",
     "@babel/plugin-transform-modules-systemjs": "^7.29.4",
     "baseline-browser-mapping": "^2.11.0",
     "browserslist": "^4.28.7",
